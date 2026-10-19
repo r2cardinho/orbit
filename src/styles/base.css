@@ -1,0 +1,25 @@
+/* Reset and general page styles. Every value comes from tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  color: var(--text);
+  /* Mica: dark window background with a light purple tint in the top left corner */
+  background-color: var(--mica);
+  background-image: radial-gradient(circle at top left, var(--mica-tint), transparent 60%);
+  background-attachment: fixed;
+}

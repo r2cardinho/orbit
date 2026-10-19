@@ -1,0 +1,101 @@
+/* =========================================================
+   Orbit — design tokens
+   Style: Windows 11 (Fluent, dark theme) + Obsidian graph
+   Rule: no color, font, radius or shadow outside this file.
+   ========================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* ---------- Surfaces ---------- */
+  --mica: #202020;                 /* window background, top bar and sidebars */
+  --mica-tint: rgba(157, 140, 255, 0.08); /* light purple tint in the corner (Mica effect) */
+  --layer: #272727;                /* central area (tabs + map + status bar) */
+  --canvas: #1c1c1c;               /* graph background */
+  --card: #2b2b2b;                 /* profile panel cards */
+  --acrylic: rgba(44, 44, 44, 0.86); /* floating panels over the map */
+  --acrylic-blur: 30px;
+
+  /* ---------- Controls ---------- */
+  --control-fill: rgba(255, 255, 255, 0.06);   /* default button, text field, active item */
+  --control-stroke: rgba(255, 255, 255, 0.08); /* border of controls and panels */
+  --control-stroke-strong: rgba(255, 255, 255, 0.54); /* bottom line of text fields */
+  --layer-stroke: rgba(0, 0, 0, 0.35);         /* border of the central area and cards */
+  --divider: #1f1f1f;                           /* divider inside cards */
+
+  /* ---------- Text ---------- */
+  --text: #ffffff;
+  --text-2: #c5c5c5;   /* secondary */
+  --text-3: #9d9d9d;   /* tertiary: captions, counts */
+
+  /* ---------- Accent (Obsidian purple) ---------- */
+  --accent: #9d8cff;       /* primary button, selected person, mutual connections */
+  --accent-text: #c7bcff;  /* links and highlighted numbers on dark background */
+  --on-accent: #1a1530;    /* text on --accent */
+
+  /* ---------- Marker (connections in common) ---------- */
+  --marker: #ffd166;
+  --on-marker: #1c1c1c;
+
+  /* ---------- Graph ---------- */
+  --node-center: #ffffff;    /* person at the center of the map (with ring) */
+  --node-expanded: #d4d4d4;  /* already expanded */
+  --node-idle: #6b6b6b;      /* not expanded yet */
+  --node-selected: var(--accent);
+  --edge: #5c5c5c;           /* "follows" (arrow) */
+  --edge-highlight: #8a8a8a; /* "follows" connected to the selected person */
+  --edge-mutual: var(--accent); /* mutual: line with a tick in the middle */
+  --label: #bdbdbd;          /* name below the person */
+  --dim-opacity: 0.3;        /* people who are not neighbors of the selected person */
+
+  --node-size-center: 22px;
+  --node-size-expanded: 18px;
+  --node-size-idle: 12px;
+  --node-size-selected: 20px;
+
+  /* ---------- Typography (Windows 11 type ramp) ---------- */
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --fs-caption: 12px;  --lh-caption: 16px;
+  --fs-body: 14px;     --lh-body: 20px;
+  --fs-subtitle: 20px; --lh-subtitle: 28px;
+  --fs-title: 28px;    --lh-title: 36px;
+  --fw-regular: 400;
+  --fw-strong: 600;
+
+  /* ---------- Spacing (base 4) ---------- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;
+
+  /* ---------- Sizes ---------- */
+  --control-h: 32px;       /* buttons and fields on desktop */
+  --control-h-touch: 44px; /* buttons and fields on mobile */
+  --list-row-h: 32px;      /* rows of the people list */
+  --titlebar-h: 48px;
+  --tabs-h: 40px;
+  --statusbar-h: 28px;
+  --ribbon-w: 48px;
+  --sidebar-w: 240px;
+  --profile-w: 320px;
+
+  /* ---------- Corners ---------- */
+  --radius-control: 4px;  /* buttons, fields, list items */
+  --radius-tab: 6px;      /* tabs (top only) and notices */
+  --radius-card: 8px;     /* cards, floating panels, central area */
+  --radius-sheet: 12px;   /* profile drawer on mobile */
+
+  /* ---------- Shadows ---------- */
+  --shadow-flyout: 0 8px 16px rgba(0, 0, 0, 0.26);
+  --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.3);
+
+  /* ---------- Motion ---------- */
+  --dur-fast: 167ms;
+  --dur-normal: 250ms;
+  --ease: cubic-bezier(0, 0, 0, 1);
+
+  /* ---------- Focus ---------- */
+  --focus-ring: 2px solid var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-normal: 0ms; }
+}
