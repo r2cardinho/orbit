@@ -92,6 +92,9 @@
   --indicator-w: 3px;      /* purple bar on the active ribbon button */
   --indicator-h: 16px;
   --dot-size: 8px;         /* dot on each tab */
+  --dot-size-large: 10px;  /* list dot: center, expanded, selected */
+  --dot-size-small: 6px;   /* list dot: not expanded */
+  --avatar-size: 56px;     /* photo in the profile panel */
 
   /* ---------- Corners ---------- */
   --radius-control: 4px;  /* buttons, fields, list items */

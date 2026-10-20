@@ -56,6 +56,48 @@ export const strings = {
     empty: 'Enter a GitHub username to start a map.',
   },
 
+  // Joins names as "a, b and c".
+  list: {
+    separator: ', ',
+    lastSeparator: ' and ',
+  },
+
+  peopleList: {
+    title: 'People on this map',
+    filterLabel: 'Filter people',
+    center: 'Center',
+    expanded: 'Expanded',
+    notExpanded: 'Not expanded',
+    groupWithCount: (name: string, value: number) => `${name} (${formatNumber(value)})`,
+    showMore: (value: number) => `Show ${formatNumber(value)} more`,
+    empty: 'People appear here once a map starts.',
+    noMatches: (filter: string) => `No one on this map matches "${filter}".`,
+  },
+
+  profile: {
+    label: 'Selected person',
+    empty: 'Select someone on the map to see their profile.',
+    onGitHub: (login: string) => `@${login} on GitHub`,
+    stats: (followers: number, following: number, repositories: number) =>
+      `${count(followers, 'follower', 'followers')}, ${formatNumber(following)} following, ` +
+      `${count(repositories, 'repository', 'repositories')}.`,
+    loadingProfile: 'Loading profile…',
+    loadMore: (perClick: number) => `Load ${formatNumber(perClick)} more`,
+    loading: 'Loading…',
+    allLoaded: 'All loaded',
+    startMap: 'Start map here',
+    followsOnMap: 'Follows on this map',
+    followedBy: 'Followed by',
+    mutual: 'Mutual',
+    inCommonWith: (center: string) => `In common with ${center}: `,
+    nothingInCommon: (center: string) => `Nothing in common with ${center} on this map yet.`,
+    connections: (value: number) => `Connections on this map (${formatNumber(value)})`,
+    noConnections: 'No connections on this map yet.',
+    relationMutual: 'mutual',
+    relationFollows: (login: string) => `${login} follows`,
+    relationFollowedBy: (login: string) => `follows ${login}`,
+  },
+
   statusbar: {
     label: 'Map totals',
     people: (value: number) => count(value, 'person', 'people'),

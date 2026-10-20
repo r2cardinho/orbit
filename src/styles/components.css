@@ -3,29 +3,56 @@
 /* ---------- Page layout ---------- */
 
 /*
-  ┌ top bar ────────────────────────────┐
-  │ ribbon │ workspace (tabs/graph/status)│
-  └────────┴──────────────────────────────┘
+  ┌ top bar ───────────────────────────────────────────────┐
+  │ ribbon │ people list │ workspace (tabs/graph/status) │ profile │
+  └────────┴─────────────┴───────────────────────────────┴─────────┘
+  Named areas keep every part in its place even when the people list is closed.
 */
 .app {
   display: grid;
-  grid-template-columns: var(--ribbon-w) minmax(0, 1fr);
+  grid-template-columns: var(--ribbon-w) var(--sidebar-w) minmax(0, 1fr) var(--profile-w);
   grid-template-rows: var(--titlebar-h) minmax(0, 1fr);
+  grid-template-areas:
+    "topbar topbar  topbar    topbar"
+    "ribbon sidebar workspace profile";
   height: 100%;
 }
 
+.app.is-people-closed {
+  grid-template-columns: var(--ribbon-w) 0 minmax(0, 1fr) var(--profile-w);
+}
+
 .topbar {
-  grid-column: 1 / -1;
+  grid-area: topbar;
+}
+
+.ribbon {
+  grid-area: ribbon;
+}
+
+.sidebar {
+  grid-area: sidebar;
+}
+
+.workspace {
+  grid-area: workspace;
+}
+
+.profile-panel {
+  grid-area: profile;
 }
 
 /* The central area sits on a lighter layer with a rounded top left corner. */
 .workspace {
   display: grid;
+  /* minmax(0, …): the graph canvas must follow the column's size, never push it wider. */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: var(--tabs-h) minmax(0, 1fr) var(--statusbar-h);
   min-width: 0;
   background-color: var(--layer);
   border-top: 1px solid var(--layer-stroke);
   border-left: 1px solid var(--layer-stroke);
+  border-right: 1px solid var(--layer-stroke);
   border-top-left-radius: var(--radius-card);
 }
 
@@ -42,6 +69,7 @@
 .button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--sp-2);
   height: var(--control-h);
   padding: 0 var(--sp-3);
@@ -61,6 +89,33 @@
 
 .button:active {
   background-color: var(--control-fill-pressed);
+}
+
+/* Main action: purple. */
+.button--accent {
+  background-color: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+  font-weight: var(--fw-strong);
+}
+
+.button--accent:hover {
+  background-color: var(--accent);
+  opacity: 0.9;
+}
+
+.button--accent:active {
+  background-color: var(--accent);
+  opacity: 0.8;
+}
+
+.button:disabled,
+.button:disabled:hover {
+  background-color: var(--control-fill);
+  border-color: var(--control-stroke);
+  color: var(--text-disabled);
+  opacity: 1;
+  cursor: default;
 }
 
 /* Square button with only an icon and no background until hovered. */
@@ -382,6 +437,8 @@
   justify-content: flex-end;
   gap: var(--sp-6);
   padding: 0 var(--sp-4);
+  /* Cut only sideways when the window is narrow; the countdown hint still opens upwards. */
+  overflow-x: clip;
   white-space: nowrap;
   font-size: var(--fs-caption);
   line-height: var(--lh-caption);
@@ -409,6 +466,362 @@
 /* The countdown is the main line of its tooltip. */
 .countdown-time {
   font-variant-numeric: tabular-nums; /* digits keep the same width, so the text does not jiggle */
+}
+
+/* ---------- Text field ---------- */
+
+.text-field {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--sp-3);
+  background-color: var(--control-fill);
+  border: 1px solid var(--control-stroke);
+  border-bottom-color: var(--control-stroke-strong);
+  border-radius: var(--radius-control);
+}
+
+.text-field::placeholder {
+  color: var(--text-3);
+}
+
+.text-field:hover {
+  background-color: var(--control-fill-hover);
+}
+
+.text-field:focus {
+  border-bottom-color: var(--accent);
+}
+
+/* ---------- Highlighter (people in common with the center) ---------- */
+
+.marker {
+  padding: 0 var(--sp-1);
+  background-color: var(--marker);
+  color: var(--on-marker);
+  font-weight: var(--fw-strong);
+  border-radius: var(--radius-control);
+}
+
+/* ---------- People list ---------- */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-1) var(--sp-3) var(--sp-4) var(--sp-2);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--ribbon-button-h);
+  padding: 0 var(--sp-2);
+}
+
+.sidebar-title {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+}
+
+.sidebar-count {
+  color: var(--text-3);
+}
+
+.people-filter {
+  flex: none;
+  margin: var(--sp-2) 0 var(--sp-3);
+}
+
+.people-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  height: var(--list-row-h);
+  padding: 0 var(--sp-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-3);
+  text-align: left;
+}
+
+.people-group-header:hover {
+  color: var(--text-2);
+}
+
+.people-group-header .icon {
+  width: var(--icon-size-caption);
+  height: var(--icon-size-caption);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+/* A closed group points its arrow to the right. */
+.people-group-header[aria-expanded="false"] .icon {
+  transform: rotate(-90deg);
+}
+
+.people-rows,
+.connection-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-row,
+.connection-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  height: var(--list-row-h);
+  padding: 0 var(--sp-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  text-align: left;
+}
+
+.person-row {
+  padding-left: var(--sp-6);
+}
+
+.person-row:hover,
+.connection-row:hover {
+  background-color: var(--control-fill);
+}
+
+.person-row.is-selected {
+  background-color: var(--control-fill);
+  font-weight: var(--fw-strong);
+}
+
+/* Purple bar on the left edge of the selected row, like the active ribbon button. */
+.person-row.is-selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: var(--indicator-w);
+  height: var(--indicator-h);
+  transform: translateY(-50%);
+  background-color: var(--accent);
+  border-radius: var(--indicator-w);
+}
+
+.person-name,
+.person-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The dot repeats the look of the person on the map. */
+.person-dot {
+  flex: none;
+  width: var(--dot-size-small);
+  height: var(--dot-size-small);
+  /* Small dots keep the same column as large ones. */
+  margin: 0 calc((var(--dot-size-large) - var(--dot-size-small)) / 2);
+  border-radius: 50%;
+  background-color: var(--node-idle);
+}
+
+.person-row--center .person-dot,
+.person-row--expanded .person-dot,
+.person-row.is-selected .person-dot {
+  width: var(--dot-size-large);
+  height: var(--dot-size-large);
+  margin: 0;
+}
+
+.person-row--center .person-dot {
+  background-color: var(--node-center);
+}
+
+.person-row--expanded .person-dot {
+  background-color: var(--node-expanded);
+}
+
+.person-row.is-selected .person-dot {
+  background-color: var(--node-selected);
+}
+
+.people-show-more {
+  height: var(--list-row-h);
+  padding: 0 var(--sp-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-3);
+}
+
+.people-show-more:hover {
+  color: var(--text);
+}
+
+.people-empty {
+  padding: var(--sp-2);
+  color: var(--text-3);
+}
+
+/* ---------- Profile panel ---------- */
+
+.profile-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-4);
+}
+
+.profile-empty {
+  margin-top: var(--sp-8);
+  text-align: center;
+  color: var(--text-2);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+/* Initials on purple, with the photo on top once it loads. */
+.avatar {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  overflow: hidden;
+  border-radius: 50%;
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-subtitle);
+  font-weight: var(--fw-strong);
+}
+
+.avatar-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-names {
+  min-width: 0;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: var(--fs-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-strong);
+  overflow-wrap: anywhere;
+}
+
+.profile-link {
+  color: var(--accent-text);
+}
+
+.profile-bio,
+.profile-error {
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+/* Keep the line breaks the person wrote in their bio. */
+.profile-bio {
+  white-space: pre-line;
+}
+
+.profile-stats {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--text-3);
+}
+
+.profile-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+
+.card {
+  margin: 0;
+  background-color: var(--card);
+  border: 1px solid var(--layer-stroke);
+  border-radius: var(--radius-card);
+}
+
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.card-row + .card-row {
+  border-top: 1px solid var(--divider);
+}
+
+.card-row dt {
+  color: var(--text-2);
+}
+
+.card-row dd {
+  margin: 0;
+  font-weight: var(--fw-strong);
+}
+
+.card-row dd.is-accent {
+  color: var(--accent-text);
+}
+
+/* Room between lines, so highlighted names do not touch each other. */
+.profile-common {
+  line-height: var(--lh-subtitle);
+}
+
+.marker-button {
+  border: 0;
+  font: inherit;
+  font-weight: var(--fw-strong);
+}
+
+.profile-section-title {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+}
+
+.connection-relation {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: none;
+  margin-left: auto;
+  font-size: var(--fs-caption);
+  color: var(--text-3);
+}
+
+.connection-relation.is-mutual {
+  color: var(--accent-text);
+}
+
+.connection-relation .icon {
+  width: var(--icon-size-caption);
+  height: var(--icon-size-caption);
 }
 
 /* ---------- Disabled ---------- */

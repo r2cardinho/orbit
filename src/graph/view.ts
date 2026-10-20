@@ -227,6 +227,27 @@ export class GraphView {
     })
     this.cy.on('mouseover', 'node', () => container.classList.add('is-pointing'))
     this.cy.on('mouseout', 'node', () => container.classList.remove('is-pointing'))
+
+    // Cytoscape only notices window resizes. Opening or closing a side panel changes the
+    // graph's size too, so it is told about every change of its container.
+    new ResizeObserver(() => this.cy.resize()).observe(container)
+  }
+
+  /** Moves the camera to a person when they are outside the visible part of the map. */
+  reveal(login: string): void {
+    const node = this.cy.getElementById(nodeId(login))
+    if (node.empty()) return
+
+    const visible = this.cy.extent()
+    const { x, y } = node.position()
+    if (x > visible.x1 && x < visible.x2 && y > visible.y1 && y < visible.y2) return
+
+    const duration = this.tokens.cameraDuration // 0 when the user prefers reduced motion
+    if (duration === 0) this.cy.center(node)
+    else {
+      const easing = this.tokens.ease as cytoscape.Css.TransitionTimingFunction
+      this.cy.animate({ center: { eles: node } }, { duration, easing })
+    }
   }
 
   /** Adds what is new in the model, removes what changed, and wakes up the physics. */

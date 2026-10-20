@@ -21,4 +21,7 @@ export const icons = {
   key: icon('<circle cx="6" cy="10" r="3"/><path d="M9 10h8M14.5 10v2.5M17 10v2"/>'),
   close: icon('<path d="m5.5 5.5 9 9M14.5 5.5l-9 9"/>'),
   add: icon('<path d="M10 4.5v11M4.5 10h11"/>'),
+  chevronDown: icon('<path d="m6 8 4 4 4-4"/>'),
+  // A line with a tick in the middle: the same mark as a mutual connection on the map.
+  mutual: icon('<path d="M3.5 10h13M10 6.5v7"/>'),
 }
