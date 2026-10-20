@@ -2,7 +2,7 @@
 // The button needs the `has-tooltip` class. The hint is hidden from screen readers
 // because the button's own label already says the same thing.
 
-export type TooltipPlacement = 'right' | 'bottom' | 'bottom-end'
+export type TooltipPlacement = 'right' | 'bottom' | 'bottom-end' | 'top-end'
 
 export function tooltip(text: string, placement: TooltipPlacement, hint?: string): string {
   const hintHtml = hint === undefined ? '' : `<span class="tooltip-hint">${hint}</span>`

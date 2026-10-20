@@ -6,6 +6,7 @@
 // The look of each person and line comes from classes:
 // - people: `center`, `expanded`, `selected`, `common` (in common with the center), `dimmed`
 // - lines:  `mutual`, `highlighted` (touches the selected person), `dimmed`
+// - both:   `hidden`, for what the "Map settings" filters leave out
 // A person with no class is "not expanded".
 //
 // Where each person is comes from the live physics (physics.ts). On every step of the
@@ -21,9 +22,21 @@ const ARROW_SCALE = 0.6 // arrow size relative to the line width
 const MIN_ZOOM = 0.2
 const MAX_ZOOM = 2.5
 
+const ZOOM_STEP = 1.2 // each click on + or − zooms by 20%
+
 export interface GraphViewHandlers {
   onPersonClick(login: string): void
   onBackgroundClick(): void
+  /** Called whenever the zoom changes, with the level in percent. */
+  onZoom(percent: number): void
+}
+
+/** What "Map settings" changes in the drawing. */
+export interface DisplayOptions {
+  mutualOnly: boolean
+  showNotExpanded: boolean
+  /** 1 is the normal size from the tokens; 0.5 is half, 1.5 is one and a half. */
+  nodeScale: number
 }
 
 export interface UpdateOptions {
@@ -75,15 +88,15 @@ function readTokens() {
 
 type Tokens = ReturnType<typeof readTokens>
 
-function buildStyle(t: Tokens): cytoscape.StylesheetJson {
+function buildStyle(t: Tokens, scale: number): cytoscape.StylesheetJson {
   return [
     // Not expanded: the default look of a person.
     {
       selector: 'node',
       style: {
         'background-color': t.nodeIdle,
-        width: t.sizeIdle,
-        height: t.sizeIdle,
+        width: t.sizeIdle * scale,
+        height: t.sizeIdle * scale,
         label: 'data(login)',
         color: t.label,
         'font-family': t.font,
@@ -95,15 +108,15 @@ function buildStyle(t: Tokens): cytoscape.StylesheetJson {
     },
     {
       selector: 'node.expanded',
-      style: { 'background-color': t.nodeExpanded, width: t.sizeExpanded, height: t.sizeExpanded },
+      style: { 'background-color': t.nodeExpanded, width: t.sizeExpanded * scale, height: t.sizeExpanded },
     },
     {
       // White dot, a gap in the canvas color, then a white ring.
       selector: 'node.center',
       style: {
         'background-color': t.nodeCenter,
-        width: t.sizeCenter,
-        height: t.sizeCenter,
+        width: t.sizeCenter * scale,
+        height: t.sizeCenter * scale,
         'border-width': t.ring,
         'border-color': t.canvas,
         'outline-width': t.ring,
@@ -115,8 +128,8 @@ function buildStyle(t: Tokens): cytoscape.StylesheetJson {
       selector: 'node.selected',
       style: {
         'background-color': t.nodeSelected,
-        width: t.sizeSelected,
-        height: t.sizeSelected,
+        width: t.sizeSelected * scale,
+        height: t.sizeSelected * scale,
         'underlay-color': t.nodeSelected,
         'underlay-opacity': t.haloOpacity,
         'underlay-padding': t.halo,
@@ -125,7 +138,7 @@ function buildStyle(t: Tokens): cytoscape.StylesheetJson {
     },
     {
       selector: 'node.center.selected',
-      style: { width: t.sizeCenter, height: t.sizeCenter, 'outline-color': t.nodeSelected },
+      style: { width: t.sizeCenter * scale, height: t.sizeCenter * scale, 'outline-color': t.nodeSelected },
     },
     {
       selector: 'node.center, node.selected',
@@ -174,6 +187,7 @@ function buildStyle(t: Tokens): cytoscape.StylesheetJson {
     },
 
     { selector: '.dimmed', style: { opacity: t.dimOpacity } },
+    { selector: '.hidden', style: { display: 'none' } },
   ]
 }
 
@@ -198,13 +212,14 @@ export class GraphView {
   private readonly physics: GraphPhysics
   private selected: string | null = null
   private fitPending = false
+  private display: DisplayOptions = { mutualOnly: false, showNotExpanded: true, nodeScale: 1 }
 
   constructor(container: HTMLElement, model: GraphModel, handlers: GraphViewHandlers) {
     this.model = model
     this.tokens = readTokens()
     this.cy = cytoscape({
       container,
-      style: buildStyle(this.tokens),
+      style: buildStyle(this.tokens, this.display.nodeScale),
       minZoom: MIN_ZOOM,
       maxZoom: MAX_ZOOM,
       boxSelectionEnabled: false,
@@ -225,12 +240,24 @@ export class GraphView {
     this.cy.on('tap', (event) => {
       if (event.target === this.cy) handlers.onBackgroundClick()
     })
+    this.cy.on('zoom', () => handlers.onZoom(this.zoomPercent()))
+    handlers.onZoom(this.zoomPercent())
+
     this.cy.on('mouseover', 'node', () => container.classList.add('is-pointing'))
     this.cy.on('mouseout', 'node', () => container.classList.remove('is-pointing'))
 
     // Cytoscape only notices window resizes. Opening or closing a side panel changes the
     // graph's size too, so it is told about every change of its container.
-    new ResizeObserver(() => this.cy.resize()).observe(container)
+    // The pan moves by half the change, so what was in the middle stays in the middle.
+    let { width, height } = container.getBoundingClientRect()
+    new ResizeObserver(() => {
+      const box = container.getBoundingClientRect()
+      const pan = this.cy.pan()
+      this.cy.resize()
+      this.cy.pan({ x: pan.x + (box.width - width) / 2, y: pan.y + (box.height - height) / 2 })
+      width = box.width
+      height = box.height
+    }).observe(container)
   }
 
   /** Moves the camera to a person when they are outside the visible part of the map. */
@@ -257,12 +284,88 @@ export class GraphView {
       this.syncLinks()
     })
     this.refreshClasses()
+    this.applyFilters()
     if (options.fit === true) this.fitPending = true
+    this.updatePhysics()
+  }
 
-    this.physics.update(
-      this.cy.nodes().map((node) => ({ id: node.id(), ...node.position() })),
-      this.cy.edges().map((edge) => ({ source: edge.data('source'), target: edge.data('target') })),
-    )
+  /** Applies "Map settings": filters and node size. */
+  setDisplay(options: DisplayOptions): void {
+    const sizeChanged = options.nodeScale !== this.display.nodeScale
+    this.display = options
+    if (sizeChanged) this.cy.style(buildStyle(this.tokens, options.nodeScale))
+    this.applyFilters()
+    this.updatePhysics()
+  }
+
+  /** "Spacing" in "Map settings": 1 is normal, 2 is twice as spread out. */
+  setSpacing(multiplier: number): void {
+    this.physics.setSpacing(multiplier)
+  }
+
+  zoomIn(): void {
+    this.zoomAroundMiddle(this.cy.zoom() * ZOOM_STEP)
+  }
+
+  zoomOut(): void {
+    this.zoomAroundMiddle(this.cy.zoom() / ZOOM_STEP)
+  }
+
+  /** Moves the camera to show the whole map. */
+  fit(): void {
+    this.fitMap()
+  }
+
+  private zoomAroundMiddle(level: number): void {
+    this.cy.zoom({ level, renderedPosition: { x: this.cy.width() / 2, y: this.cy.height() / 2 } })
+  }
+
+  private zoomPercent(): number {
+    return Math.round(this.cy.zoom() * 100)
+  }
+
+  /**
+   * Hides what the filters leave out:
+   * - "Show not expanded" off: people never expanded, and their lines;
+   * - "Mutual only" on: one-way lines, and people left without any line.
+   * The center always stays.
+   */
+  private applyFilters(): void {
+    const { mutualOnly, showNotExpanded } = this.display
+    const isIdle = (id: string) => {
+      const login: string = this.cy.getElementById(id).data('login')
+      return !this.model.isExpanded(login) && !this.model.isCenter(login)
+    }
+
+    this.cy.batch(() => {
+      this.cy.edges().forEach((edge) => {
+        const hidden =
+          (mutualOnly && edge.data('mutual') !== true) ||
+          (!showNotExpanded && (isIdle(edge.data('source')) || isIdle(edge.data('target'))))
+        edge.toggleClass('hidden', hidden)
+      })
+      this.cy.nodes().forEach((node) => {
+        if (this.model.isCenter(node.data('login'))) {
+          node.removeClass('hidden')
+          return
+        }
+        const hasVisibleLine = node.connectedEdges().filter((edge) => !edge.hasClass('hidden')).nonempty()
+        node.toggleClass('hidden', (!showNotExpanded && isIdle(node.id())) || (mutualOnly && !hasVisibleLine))
+      })
+    })
+  }
+
+  /** Gives the physics only what is visible, so hidden people do not push anyone. */
+  private updatePhysics(): void {
+    const people: { id: string; x: number; y: number }[] = []
+    const links: { source: string; target: string }[] = []
+    this.cy.nodes().forEach((node) => {
+      if (!node.hasClass('hidden')) people.push({ id: node.id(), ...node.position() })
+    })
+    this.cy.edges().forEach((edge) => {
+      if (!edge.hasClass('hidden')) links.push({ source: edge.data('source'), target: edge.data('target') })
+    })
+    this.physics.update(people, links)
   }
 
   /** Removes everything from the screen, to start a new map. */
@@ -386,7 +489,7 @@ export class GraphView {
 
   /** Moves the camera to show the whole map. A small map stays at 100% instead of being blown up. */
   private fitMap(): void {
-    const box = this.cy.elements().boundingBox()
+    const box = this.cy.elements().not('.hidden').boundingBox()
     const padding = this.tokens.padding
     const zoom = Math.max(
       MIN_ZOOM,

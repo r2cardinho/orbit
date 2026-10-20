@@ -36,6 +36,9 @@
   --accent-text: #c7bcff;  /* links and highlighted numbers on dark background */
   --on-accent: #1a1530;    /* text on --accent */
 
+  /* ---------- Critical (errors) ---------- */
+  --critical: #ff99a4;     /* error icon on dark background (Windows 11 critical color) */
+
   /* ---------- Marker (connections in common) ---------- */
   --marker: #ffd166;
   --on-marker: #1c1c1c;
@@ -95,6 +98,13 @@
   --dot-size-large: 10px;  /* list dot: center, expanded, selected */
   --dot-size-small: 6px;   /* list dot: not expanded */
   --avatar-size: 56px;     /* photo in the profile panel */
+  --flyout-w: 240px;       /* floating panels over the map ("Map settings") */
+  --dialog-w: 460px;       /* "Add token" window */
+  --toggle-w: 40px;        /* on/off switch */
+  --toggle-h: 20px;
+  --toggle-knob: 12px;
+  --slider-track-h: 4px;
+  --slider-thumb: 18px;
 
   /* ---------- Corners ---------- */
   --radius-control: 4px;  /* buttons, fields, list items */
@@ -110,6 +120,8 @@
   --dur-fast: 167ms;
   --dur-normal: 250ms;
   --dur-camera: 400ms;     /* camera moving to show the whole map */
+  --dur-spin: 1s;          /* one turn of the loading spinner */
+  --dur-notice: 5s;        /* how long a success notice stays before closing itself */
   --ease: cubic-bezier(0, 0, 0, 1);
 
   /* ---------- Focus ---------- */

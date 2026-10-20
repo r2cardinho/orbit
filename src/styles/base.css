@@ -49,3 +49,13 @@ p {
   outline: var(--focus-ring);
   outline-offset: var(--focus-offset);
 }
+
+/* Text only for screen readers (for example "opens in a new tab"). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

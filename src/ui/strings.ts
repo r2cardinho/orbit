@@ -35,6 +35,7 @@ export const strings = {
     searchPlaceholder: 'GitHub username',
     searchSubmit: 'Map',
     addToken: 'Add token',
+    editToken: 'Edit token',
   },
 
   ribbon: {
@@ -42,6 +43,7 @@ export const strings = {
     people: 'People on this map',
     path: 'Path between two people',
     recentMaps: 'Recent maps',
+    settings: 'Map settings',
   },
 
   tabs: {
@@ -54,6 +56,85 @@ export const strings = {
   graph: {
     label: 'Map of GitHub connections',
     empty: 'Enter a GitHub username to start a map.',
+  },
+
+  // Notices at the top of the map. The title is bold and the detail follows it.
+  notices: {
+    close: 'Close notice',
+    loadingMap: (login: string) => `Loading ${login}…`,
+    loadingConnections: (login: string) => `Loading connections of ${login}…`,
+    expanded: (login: string) => `${login} expanded.`,
+    newPeople: (value: number) =>
+      value === 0 ? 'No new people: everyone was already on the map.' : `${count(value, 'new person', 'new people')} on the map.`,
+    couldNotLoad: (login: string) => `Could not load ${login}.`,
+    tokenAdded: 'Token added.',
+    tokenAddedDetail: 'You now have 5,000 requests per hour.',
+    tokenRemoved: 'Token removed.',
+    tokenRemovedDetail: 'Back to 60 requests per hour.',
+  },
+
+  settings: {
+    title: 'Map settings',
+    close: 'Close map settings',
+    filters: 'Filters',
+    mutualOnly: 'Mutual only',
+    showNotExpanded: 'Show not expanded',
+    display: 'Display',
+    nodeSize: 'Node size',
+    spacing: 'Spacing',
+    requests: 'GitHub requests',
+    perClick: 'Per click',
+    perClickHint: 'People loaded from each list (followers and following) on every click.',
+    percent: (value: number) => `${value}%`,
+  },
+
+  legend: {
+    label: 'Legend',
+    center: 'Center',
+    expanded: 'Expanded',
+    notExpanded: 'Not expanded',
+    follows: 'Follows',
+    mutual: 'Mutual',
+    inCommon: 'In common',
+  },
+
+  zoom: {
+    label: 'Zoom',
+    zoomOut: 'Zoom out',
+    zoomIn: 'Zoom in',
+    level: (percent: number) => `${percent}%`,
+    fit: 'Show the whole map',
+  },
+
+  tokenDialog: {
+    title: 'Add a GitHub token',
+    intro: 'Without a token, GitHub allows 60 requests per hour. A token raises the limit to 5,000.',
+    howTo: 'How to create one',
+    steps: [
+      'On GitHub, open your profile picture menu and choose Settings.',
+      'Go to Developer settings › Personal access tokens › Fine-grained tokens.',
+      'Choose Generate new token, give it a name and pick an expiration.',
+      'Under Repository access, keep Public repositories. Do not add any permissions.',
+      'Generate the token and copy it.',
+    ],
+    createLink: 'Open the token page on GitHub',
+    source: 'Source:',
+    sourceLink: 'GitHub Docs, Managing your personal access tokens',
+    newTab: '(opens in a new tab)',
+    fieldLabel: 'Token',
+    fieldPlaceholder: 'github_pat_…',
+    privacy: 'The token stays only in this page’s memory. It is never saved, it disappears when you reload, and it is only sent to the GitHub API.',
+    save: 'Save token',
+    checking: 'Checking token…',
+    remove: 'Remove token',
+    cancel: 'Cancel',
+    empty: 'Paste a token first.',
+    active: 'A token is active. You have 5,000 requests per hour.',
+  },
+
+  links: {
+    createToken: 'https://github.com/settings/personal-access-tokens/new',
+    tokenDocs: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens',
   },
 
   // Joins names as "a, b and c".

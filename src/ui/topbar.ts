@@ -2,17 +2,19 @@
 
 import { icons } from './icons.ts'
 import { strings } from './strings.ts'
-import { tooltip } from './tooltip.ts'
 
 export interface TopbarHandlers {
   /** Called with the cleaned-up username when the search is submitted. */
   onSearch(login: string): void
+  onAddToken(): void
 }
 
 export interface Topbar {
   element: HTMLElement
   setQuery(value: string): void
   focusSearch(): void
+  /** With a token the button reads "Edit token" instead of "Add token". */
+  setHasToken(hasToken: boolean): void
 }
 
 /** "  @Torvalds " -> "Torvalds" */
@@ -35,12 +37,9 @@ export function createTopbar(handlers: TopbarHandlers): Topbar {
       <button class="search-button icon-button" type="submit" aria-label="${text.searchSubmit}">${icons.search}</button>
     </form>
     <div class="topbar-actions">
-      <!-- The token window arrives in a later step. -->
-      <button class="button has-tooltip" type="button" aria-disabled="true"
-        aria-label="${text.addToken}. ${strings.comingSoon}">
+      <button class="button token-button" type="button" aria-haspopup="dialog">
         ${icons.key}
-        <span>${text.addToken}</span>
-        ${tooltip(strings.comingSoon, 'bottom-end')}
+        <span class="token-button-label">${text.addToken}</span>
       </button>
     </div>
   `
@@ -58,8 +57,14 @@ export function createTopbar(handlers: TopbarHandlers): Topbar {
     handlers.onSearch(login)
   })
 
+  element.querySelector('.token-button')!.addEventListener('click', () => handlers.onAddToken())
+  const tokenLabel = element.querySelector<HTMLElement>('.token-button-label')!
+
   return {
     element,
+    setHasToken: (hasToken) => {
+      tokenLabel.textContent = hasToken ? text.editToken : text.addToken
+    },
     setQuery: (value) => {
       input.value = value
     },

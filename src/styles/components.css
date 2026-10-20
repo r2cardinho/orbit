@@ -406,6 +406,8 @@
   position: relative;
   overflow: hidden;
   background-color: var(--canvas);
+  /* Lets the panels over the map adapt to the map's own width (see the end of the Zoom section). */
+  container: map / inline-size;
 }
 
 .graph {
@@ -822,6 +824,526 @@
 .connection-relation .icon {
   width: var(--icon-size-caption);
   height: var(--icon-size-caption);
+}
+
+/* ---------- Floating panels over the map (acrylic) ---------- */
+
+.flyout {
+  background-color: var(--acrylic);
+  backdrop-filter: blur(var(--acrylic-blur));
+  border: 1px solid var(--control-stroke);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-flyout);
+}
+
+/* Everything floating sits above the graph canvas. */
+.infobar,
+.settings-panel,
+.legend,
+.zoom-controls {
+  position: absolute;
+  z-index: 1;
+}
+
+/* ---------- Notice ---------- */
+
+.infobar {
+  top: var(--sp-4);
+  left: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  /* Never under "Map settings" while it is open. */
+  max-width: calc(100% - var(--flyout-w) - 3 * var(--sp-4));
+  min-height: calc(var(--control-h) + 2 * var(--sp-2));
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
+  background-color: var(--acrylic);
+  backdrop-filter: blur(var(--acrylic-blur));
+  border: 1px solid var(--control-stroke);
+  border-radius: var(--radius-tab);
+  box-shadow: var(--shadow-flyout);
+}
+
+/* When "Map settings" is closed the notice may use the whole width. */
+.graph-area:has(.settings-panel[hidden]) .infobar {
+  max-width: calc(100% - 2 * var(--sp-4));
+}
+
+.infobar-icon {
+  flex: none;
+  display: flex;
+  color: var(--accent);
+}
+
+.infobar[data-kind="error"] .infobar-icon {
+  color: var(--critical);
+}
+
+.infobar-message {
+  min-width: 0;
+  padding: var(--sp-1) 0;
+  color: var(--text-2);
+}
+
+.infobar-message strong {
+  color: var(--text);
+  font-weight: var(--fw-strong);
+}
+
+.infobar-action {
+  flex: none;
+}
+
+.infobar-close {
+  flex: none;
+  width: var(--control-h);
+  height: var(--control-h);
+}
+
+.infobar-close .icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+/* Loading: a gray ring with one purple quarter that turns. */
+.spinner {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  border: 2px solid var(--control-stroke-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin var(--dur-spin) linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+/* ---------- Map settings ---------- */
+
+.settings-panel {
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: var(--flyout-w);
+  max-height: calc(100% - 2 * var(--sp-4));
+  overflow-y: auto;
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+}
+
+.flyout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flyout-title {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+}
+
+.flyout-close {
+  width: var(--control-h);
+  height: var(--control-h);
+  margin-right: calc(-1 * var(--sp-2));
+}
+
+.flyout-close .icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.flyout-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  height: var(--list-row-h);
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--text-3);
+  text-align: left;
+}
+
+.flyout-section-header:hover {
+  color: var(--text-2);
+}
+
+.flyout-section-header .icon {
+  width: var(--icon-size-caption);
+  height: var(--icon-size-caption);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.flyout-section-header[aria-expanded="false"] .icon {
+  transform: rotate(-90deg);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--control-h);
+}
+
+.setting-slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-1) 0 var(--sp-2);
+}
+
+.setting-hint {
+  padding-bottom: var(--sp-2);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--text-3);
+}
+
+/* On/off switch in the Windows 11 style, built on a real checkbox. */
+.toggle {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: var(--toggle-w);
+  height: var(--toggle-h);
+  margin: 0;
+  border: 1px solid var(--text-2);
+  border-radius: var(--toggle-h);
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.toggle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc((var(--toggle-h) - var(--toggle-knob)) / 2 - 1px);
+  width: var(--toggle-knob);
+  height: var(--toggle-knob);
+  border-radius: 50%;
+  background-color: var(--text-2);
+  transform: translateY(-50%);
+  transition: left var(--dur-fast) var(--ease);
+}
+
+.toggle:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle:checked::before {
+  left: calc(var(--toggle-w) - var(--toggle-knob) - (var(--toggle-h) - var(--toggle-knob)) / 2 - 1px);
+  background-color: var(--on-accent);
+}
+
+/* Slider: purple up to the thumb (--fill is set by the code), gray after it. */
+.slider {
+  appearance: none;
+  width: 100%;
+  height: var(--slider-thumb);
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: var(--slider-track-h);
+  border-radius: var(--slider-track-h);
+  background: linear-gradient(to right, var(--accent) var(--fill, 50%), var(--control-stroke-strong) var(--fill, 50%));
+}
+
+.slider::-moz-range-track {
+  height: var(--slider-track-h);
+  border-radius: var(--slider-track-h);
+  background: linear-gradient(to right, var(--accent) var(--fill, 50%), var(--control-stroke-strong) var(--fill, 50%));
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--slider-thumb);
+  height: var(--slider-thumb);
+  margin-top: calc((var(--slider-track-h) - var(--slider-thumb)) / 2);
+  border: 0;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+.slider::-moz-range-thumb {
+  width: var(--slider-thumb);
+  height: var(--slider-thumb);
+  border: 0;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+.select {
+  height: var(--control-h);
+  padding: 0 var(--sp-2);
+  background-color: var(--control-fill);
+  border: 1px solid var(--control-stroke);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font: inherit;
+}
+
+.select option {
+  background-color: var(--layer);
+  color: var(--text);
+}
+
+/* ---------- Legend ---------- */
+
+.legend {
+  left: var(--sp-4);
+  bottom: var(--sp-4);
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: var(--sp-2) var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  color: var(--text-2);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  white-space: nowrap;
+}
+
+/* Every mark sits in a box of the same width, so the names line up. */
+.legend-dot,
+.legend-swatch,
+.legend-mark,
+.legend-item .icon {
+  flex: none;
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.legend-dot {
+  border-radius: 50%;
+}
+
+/* White dot, a gap and a ring, like the center on the map. */
+.legend-dot--center {
+  background-color: var(--node-center);
+  border: var(--node-ring) solid var(--canvas);
+  outline: var(--node-ring) solid var(--node-center);
+  transform: scale(0.8);
+}
+
+.legend-dot--expanded {
+  background-color: var(--node-expanded);
+  transform: scale(0.7);
+}
+
+.legend-dot--idle {
+  background-color: var(--node-idle);
+  transform: scale(0.45);
+}
+
+.legend-mark {
+  color: var(--edge-highlight);
+}
+
+.legend-item--mutual .icon {
+  color: var(--edge-mutual);
+}
+
+.legend-swatch {
+  height: var(--icon-size-caption);
+  border-radius: var(--radius-control);
+  background-color: var(--marker);
+}
+
+/* ---------- Zoom ---------- */
+
+.zoom-controls {
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.zoom-group {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-1);
+}
+
+.zoom-group .icon-button,
+.zoom-fit {
+  width: var(--control-h);
+  height: var(--control-h);
+}
+
+.zoom-group .icon,
+.zoom-fit .icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.zoom-level {
+  min-width: calc(var(--control-h) * 1.5);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+/* Unlike plain icon buttons, the fit button keeps its acrylic background. */
+.zoom-fit,
+.zoom-fit:hover {
+  background-color: var(--acrylic);
+}
+
+/*
+  Narrow map (side panels open on a small window): the notice may cover "Map settings",
+  and the legend uses two columns, or hides when there is no room at all.
+  Container sizes cannot use var(), so the widths are written here.
+*/
+@container map (max-width: 640px) {
+  .infobar {
+    z-index: 2;
+    max-width: calc(100% - 2 * var(--sp-4));
+  }
+
+  .legend {
+    grid-template-columns: repeat(2, auto);
+  }
+}
+
+@container map (max-width: 480px) {
+  .legend {
+    display: none;
+  }
+}
+
+/* ---------- Ribbon: settings at the bottom ---------- */
+
+.ribbon {
+  padding-bottom: var(--sp-2);
+}
+
+.ribbon-settings {
+  margin-top: auto;
+}
+
+/* ---------- Dialog ("Add token") ---------- */
+
+.dialog {
+  width: min(var(--dialog-w), calc(100% - 2 * var(--sp-4)));
+  max-height: calc(100% - 2 * var(--sp-4));
+  padding: 0;
+  background-color: var(--layer);
+  color: var(--text);
+  border: 1px solid var(--control-stroke);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-flyout);
+}
+
+.dialog::backdrop {
+  background-color: var(--layer-stroke);
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-6);
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: var(--fs-subtitle);
+  line-height: var(--lh-subtitle);
+  font-weight: var(--fw-strong);
+}
+
+.dialog-subtitle {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+}
+
+.dialog-text {
+  color: var(--text-2);
+}
+
+.dialog-text a,
+.dialog-note a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--accent-text);
+}
+
+.dialog-text a .icon,
+.dialog-note a .icon {
+  width: var(--icon-size-caption);
+  height: var(--icon-size-caption);
+}
+
+.dialog-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.dialog-status .icon {
+  color: var(--accent);
+}
+
+.token-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin: 0;
+  padding-left: var(--sp-5);
+  color: var(--text-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.field-label {
+  font-weight: var(--fw-strong);
+}
+
+.dialog-error {
+  color: var(--critical);
+}
+
+.dialog-note {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--text-3);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+/* "Remove token" stays on the left, away from the main action. */
+.dialog-actions [data-action="remove"] {
+  margin-right: auto;
 }
 
 /* ---------- Disabled ---------- */

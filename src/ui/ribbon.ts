@@ -1,19 +1,23 @@
 // Ribbon: the column of icon buttons on the left edge.
-// "People on this map" opens and closes the people list. The other two are planned
-// for phase 2, so they stay disabled with a "Coming soon" hint.
+// "People on this map" opens and closes the people list, and the gear at the bottom
+// opens and closes "Map settings". "Path between two people" and "Recent maps" are
+// planned for phase 2, so they stay disabled with a "Coming soon" hint.
 
 import { icons } from './icons.ts'
 import { PEOPLE_LIST_ID } from './people-list.ts'
+import { SETTINGS_PANEL_ID } from './settings-panel.ts'
 import { strings } from './strings.ts'
 import { tooltip } from './tooltip.ts'
 
 export interface RibbonHandlers {
   onTogglePeople(): void
+  onToggleSettings(): void
 }
 
 export interface Ribbon {
   element: HTMLElement
   setPeopleOpen(open: boolean): void
+  setSettingsOpen(open: boolean): void
 }
 
 export function createRibbon(handlers: RibbonHandlers): Ribbon {
@@ -37,16 +41,27 @@ export function createRibbon(handlers: RibbonHandlers): Ribbon {
       ${icons.recent}
       ${tooltip(text.recentMaps, 'right', strings.comingSoon)}
     </button>
+    <button class="ribbon-button ribbon-settings has-tooltip" type="button" data-action="settings"
+      aria-controls="${SETTINGS_PANEL_ID}" aria-label="${text.settings}">
+      ${icons.settings}
+      ${tooltip(text.settings, 'right')}
+    </button>
   `
 
   const peopleButton = element.querySelector<HTMLButtonElement>('[data-action="people"]')!
   peopleButton.addEventListener('click', () => handlers.onTogglePeople())
+  const settingsButton = element.querySelector<HTMLButtonElement>('[data-action="settings"]')!
+  settingsButton.addEventListener('click', () => handlers.onToggleSettings())
 
   return {
     element,
     setPeopleOpen: (open) => {
       peopleButton.classList.toggle('is-active', open)
       peopleButton.setAttribute('aria-expanded', String(open))
+    },
+    setSettingsOpen: (open) => {
+      settingsButton.classList.toggle('is-active', open)
+      settingsButton.setAttribute('aria-expanded', String(open))
     },
   }
 }

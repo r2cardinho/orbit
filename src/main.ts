@@ -7,34 +7,46 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/components.css'
 import {
-  DEFAULT_PER_PAGE,
   GitHubError,
+  addToken,
   getFollowers,
   getFollowing,
   getProfile,
+  hasToken,
   onRateLimitChange,
   refreshRateLimit,
+  removeToken,
   type GitHubProfile,
 } from './api/github.ts'
 import { GraphModel } from './graph/model.ts'
 import { GraphView } from './graph/view.ts'
+import { createInfobar, type Notice } from './ui/infobar.ts'
+import { createMapControls } from './ui/map-controls.ts'
 import { createPeopleList, type PersonEntry, type PersonGroup } from './ui/people-list.ts'
 import { createProfilePanel, type Connection, type ProfileView, type Relation } from './ui/profile-panel.ts'
 import { createRibbon } from './ui/ribbon.ts'
+import { createSettingsPanel, DEFAULT_SETTINGS, type MapSettings } from './ui/settings-panel.ts'
 import { createStatusbar } from './ui/statusbar.ts'
 import { strings } from './ui/strings.ts'
 import { createTabs, MAP_PANEL_ID, MAP_TAB_ID } from './ui/tabs.ts'
+import { createTokenDialog } from './ui/token-dialog.ts'
 import { createTopbar } from './ui/topbar.ts'
 
-const PER_CLICK = DEFAULT_PER_PAGE // becomes a setting in "Map settings" later
+let settings: MapSettings = { ...DEFAULT_SETTINGS }
 
 // ---------- Screen ----------
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.className = 'app'
 
-const topbar = createTopbar({ onSearch: (login) => startMap(login) })
-const ribbon = createRibbon({ onTogglePeople: () => setPeopleOpen(!peopleOpen) })
+const topbar = createTopbar({
+  onSearch: (login) => startMap(login),
+  onAddToken: () => tokenDialog.open(hasToken()),
+})
+const ribbon = createRibbon({
+  onTogglePeople: () => setPeopleOpen(!peopleOpen),
+  onToggleSettings: () => setSettingsOpen(!settingsOpen),
+})
 const peopleList = createPeopleList({ onSelect: (login) => selectPerson(login, true) })
 const tabs = createTabs({ onClose: () => closeMap() })
 const statusbar = createStatusbar({ onRateLimitReset: () => refreshRateLimit() })
@@ -43,6 +55,17 @@ const profilePanel = createProfilePanel({
   onLoadMore: (login) => loadMore(login),
   onStartMap: (login) => startMap(login),
 })
+const infobar = createInfobar()
+const settingsPanel = createSettingsPanel({
+  onChange: (next) => applySettings(next),
+  onClose: () => setSettingsOpen(false),
+})
+const mapControls = createMapControls({
+  onZoomIn: () => view.zoomIn(),
+  onZoomOut: () => view.zoomOut(),
+  onFit: () => view.fit(),
+})
+const tokenDialog = createTokenDialog({ onSave: (token) => saveToken(token), onRemove: () => dropToken() })
 
 const graphArea = document.createElement('div')
 graphArea.className = 'graph-area'
@@ -55,20 +78,31 @@ graphArea.innerHTML = `
 `
 const graphElement = graphArea.querySelector<HTMLElement>('.graph')!
 const emptyState = graphArea.querySelector<HTMLElement>('.graph-empty')!
+// Panels floating over the map: notice (top left), settings (top right),
+// legend (bottom left) and zoom (bottom right).
+graphArea.append(infobar.element, settingsPanel.element, mapControls.legend, mapControls.zoom)
 
 const workspace = document.createElement('main')
 workspace.className = 'workspace'
 workspace.append(tabs.element, graphArea, statusbar.element)
 
 app.append(topbar.element, ribbon.element, peopleList.element, workspace, profilePanel.element)
+document.body.append(tokenDialog.element)
 
 let peopleOpen = true
+let settingsOpen = true // "Map settings" starts open, as in the approved design
 
 function setPeopleOpen(open: boolean): void {
   peopleOpen = open
   peopleList.element.hidden = !open
   app.classList.toggle('is-people-closed', !open)
   ribbon.setPeopleOpen(open)
+}
+
+function setSettingsOpen(open: boolean): void {
+  settingsOpen = open
+  settingsPanel.setOpen(open)
+  ribbon.setSettingsOpen(open)
 }
 
 // ---------- Map state ----------
@@ -79,14 +113,16 @@ const model = new GraphModel()
 const view = new GraphView(graphElement, model, {
   onPersonClick: (login) => selectPerson(login, false),
   onBackgroundClick: () => selectPerson(null, false),
+  onZoom: (percent) => mapControls.setZoom(percent),
 })
 
 onRateLimitChange((rateLimit) => statusbar.setRateLimit(rateLimit))
 refreshRateLimit()
 
-/** How far each person's followers and following were loaded ("Load 20 more"). */
+/** How much of each person's followers and following was loaded ("Load 20 more"). */
 interface Paging {
-  nextPage: number
+  followersLoaded: number
+  followingLoaded: number
   followersDone: boolean
   followingDone: boolean
 }
@@ -113,6 +149,47 @@ function errorMessage(error: unknown): string {
   return error instanceof GitHubError ? error.message : strings.errors.unexpected(0)
 }
 
+/** Error notice; when the limit is reached without a token, it offers "Add token". */
+function errorNotice(error: unknown, title?: string): Notice {
+  const notice: Notice = { kind: 'error', title, detail: errorMessage(error) }
+  if (error instanceof GitHubError && error.kind === 'rate-limit' && !hasToken()) {
+    notice.action = { label: strings.topbar.addToken, onClick: () => tokenDialog.open(false) }
+  }
+  return notice
+}
+
+// ---------- Settings ----------
+
+function applySettings(next: MapSettings): void {
+  if (next.spacing !== settings.spacing) view.setSpacing(next.spacing / 100)
+  settings = next
+  view.setDisplay({
+    mutualOnly: settings.mutualOnly,
+    showNotExpanded: settings.showNotExpanded,
+    nodeScale: settings.nodeSize / 100,
+  })
+  render() // "Load 20 more" follows "Per click"
+}
+
+// ---------- Token ----------
+
+async function saveToken(token: string): Promise<string | null> {
+  try {
+    await addToken(token)
+  } catch (error) {
+    return errorMessage(error)
+  }
+  topbar.setHasToken(true)
+  infobar.show({ kind: 'success', title: strings.notices.tokenAdded, detail: strings.notices.tokenAddedDetail })
+  return null
+}
+
+async function dropToken(): Promise<void> {
+  await removeToken()
+  topbar.setHasToken(false)
+  infobar.show({ kind: 'success', title: strings.notices.tokenRemoved, detail: strings.notices.tokenRemovedDetail })
+}
+
 // ---------- Selection ----------
 
 /** Selects someone (or nobody) everywhere at once: map, list and profile. */
@@ -130,19 +207,36 @@ function selectPerson(login: string | null, reveal: boolean): void {
 
 // ---------- Loading from GitHub ----------
 
-/** Fetches the next page of followers and following of `login` and adds them to the map. */
+/**
+ * Fetches the next followers and following of `login` ("Per click" of each list)
+ * and adds them to the map.
+ *
+ * The page asked for is worked out from how many were already loaded, so changing
+ * "Per click" in the middle never skips anyone. At worst a page repeats a few people,
+ * and the model ignores repeats.
+ */
 async function loadMore(login: string): Promise<void> {
-  const page = paging.get(key(login)) ?? { nextPage: 1, followersDone: false, followingDone: false }
+  const page = paging.get(key(login)) ?? {
+    followersLoaded: 0,
+    followingLoaded: 0,
+    followersDone: false,
+    followingDone: false,
+  }
   if (loading.has(key(login)) || (page.followersDone && page.followingDone)) return
 
   const version = mapVersion
+  const perClick = settings.perClick
+  const pageAfter = (loaded: number) => Math.floor(loaded / perClick) + 1
   loading.add(key(login))
+  infobar.show({ kind: 'loading', detail: strings.notices.loadingConnections(login) })
   render()
 
   try {
+    const followersPage = pageAfter(page.followersLoaded)
+    const followingPage = pageAfter(page.followingLoaded)
     const [followers, following] = await Promise.all([
-      page.followersDone ? null : getFollowers(login, page.nextPage, PER_CLICK),
-      page.followingDone ? null : getFollowing(login, page.nextPage, PER_CLICK),
+      page.followersDone ? null : getFollowers(login, followersPage, perClick),
+      page.followingDone ? null : getFollowing(login, followingPage, perClick),
     ])
     if (version !== mapVersion) return
     const before = model.peopleCount
@@ -156,16 +250,22 @@ async function loadMore(login: string): Promise<void> {
       model.addFollow(login, user.login)
     }
     paging.set(key(login), {
-      nextPage: page.nextPage + 1,
+      followersLoaded: followers === null ? page.followersLoaded : (followersPage - 1) * perClick + followers.users.length,
+      followingLoaded: following === null ? page.followingLoaded : (followingPage - 1) * perClick + following.users.length,
       followersDone: followers === null || !followers.hasNextPage,
       followingDone: following === null || !following.hasNextPage,
     })
+    const firstTime = !model.isExpanded(login)
     model.markExpanded(login)
-    view.update({ origin: login, fit: model.isCenter(login) && page.nextPage === 1 })
+    view.update({ origin: login, fit: model.isCenter(login) && firstTime })
 
-    console.log(`${login} expanded. ${model.peopleCount - before} new people on the map.`)
+    infobar.show({
+      kind: 'success',
+      title: strings.notices.expanded(login),
+      detail: strings.notices.newPeople(model.peopleCount - before),
+    })
   } catch (error) {
-    if (version === mapVersion) console.error(error)
+    if (version === mapVersion) infobar.show(errorNotice(error, strings.notices.couldNotLoad(login)))
   } finally {
     if (version === mapVersion) {
       loading.delete(key(login))
@@ -203,6 +303,7 @@ function resetMap(): void {
 /** Starts a new map with `login` at the center. The old map stays if the user is not found. */
 async function startMap(login: string): Promise<void> {
   const version = ++mapVersion
+  infobar.show({ kind: 'loading', detail: strings.notices.loadingMap(login) })
 
   try {
     const profile = await getProfile(login)
@@ -218,7 +319,7 @@ async function startMap(login: string): Promise<void> {
     // The center starts selected, so the profile panel shows who the map is about.
     selectPerson(profile.login, false)
   } catch (error) {
-    if (version === mapVersion) console.error(error)
+    if (version === mapVersion) infobar.show(errorNotice(error))
   }
 }
 
@@ -226,6 +327,7 @@ async function startMap(login: string): Promise<void> {
 function closeMap(): void {
   mapVersion++
   resetMap()
+  infobar.hide()
   topbar.setQuery('')
   render()
   topbar.focusSearch()
@@ -279,7 +381,7 @@ function profileViewOf(login: string, common: Set<string>): ProfileView {
       : page !== undefined && page.followersDone && page.followingDone
         ? 'done'
         : 'ready',
-    perClick: PER_CLICK,
+    perClick: settings.perClick,
     counts: { follows: following.size, followedBy: followers.size, mutual: model.getMutuals(login).length },
     common: connections.filter((connection) => connection.common).map((connection) => connection.login),
     connections,
@@ -307,5 +409,6 @@ function render(): void {
 }
 
 setPeopleOpen(true)
+setSettingsOpen(true)
 render()
 topbar.focusSearch()

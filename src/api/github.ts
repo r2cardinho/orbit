@@ -129,6 +129,34 @@ export async function refreshRateLimit(): Promise<void> {
   }
 }
 
+/**
+ * Checks a token with GitHub and, if it works, starts using it.
+ * The check uses /rate_limit, which costs nothing and also brings the new limit (5,000).
+ * Throws a GitHubError ("bad-token", "network"…) when the token cannot be used.
+ */
+export async function addToken(value: string): Promise<void> {
+  const candidate = value.trim()
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}/rate_limit`, {
+      headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${candidate}` },
+    })
+  } catch {
+    throw new GitHubError('network', strings.errors.network)
+  }
+  if (response.status === 401) throw new GitHubError('bad-token', strings.errors.badToken)
+  if (!response.ok) throw new GitHubError('unexpected', strings.errors.unexpected(response.status))
+
+  setToken(candidate)
+  readRateLimit(response.headers)
+}
+
+/** Stops using the token and fetches the limit without it again (back to 60). */
+export async function removeToken(): Promise<void> {
+  setToken(null)
+  await refreshRateLimit()
+}
+
 /** Fetches `path` from the API and turns any failure into a `GitHubError`. */
 async function request(path: string, login: string): Promise<Response> {
   let response: Response

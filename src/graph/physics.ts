@@ -19,6 +19,7 @@ import {
   forceX,
   forceY,
   type ForceLink,
+  type ForceManyBody,
   type Simulation,
   type SimulationLinkDatum,
   type SimulationNodeDatum,
@@ -137,6 +138,13 @@ export class GraphPhysics {
     node.x = x
     node.y = y
     if (!reducedMotion.matches) this.simulation.alphaTarget(ALPHA_DRAG).restart()
+  }
+
+  /** Spreads people out (above 1) or brings them closer (below 1). */
+  setSpacing(multiplier: number): void {
+    this.simulation.force<ForceLink<PhysicsNode, Link>>('link')!.distance(LINK_DISTANCE * multiplier)
+    this.simulation.force<ForceManyBody<PhysicsNode>>('charge')!.strength(CHARGE * multiplier)
+    this.wake(ALPHA_DRAG)
   }
 
   /** Lets go of a person after dragging; the springs settle them again. */
