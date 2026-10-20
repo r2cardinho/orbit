@@ -1,14 +1,399 @@
-/* Components: graph, buttons, fields, lists, panels. Every value comes from tokens.css. */
+/* Components: layout, bars, buttons, fields, tabs, graph. Every value comes from tokens.css. */
+
+/* ---------- Page layout ---------- */
+
+/*
+  ┌ top bar ────────────────────────────┐
+  │ ribbon │ workspace (tabs/graph/status)│
+  └────────┴──────────────────────────────┘
+*/
+.app {
+  display: grid;
+  grid-template-columns: var(--ribbon-w) minmax(0, 1fr);
+  grid-template-rows: var(--titlebar-h) minmax(0, 1fr);
+  height: 100%;
+}
+
+.topbar {
+  grid-column: 1 / -1;
+}
+
+/* The central area sits on a lighter layer with a rounded top left corner. */
+.workspace {
+  display: grid;
+  grid-template-rows: var(--tabs-h) minmax(0, 1fr) var(--statusbar-h);
+  min-width: 0;
+  background-color: var(--layer);
+  border-top: 1px solid var(--layer-stroke);
+  border-left: 1px solid var(--layer-stroke);
+  border-top-left-radius: var(--radius-card);
+}
+
+/* ---------- Icons ---------- */
+
+.icon {
+  flex: none;
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--control-h);
+  padding: 0 var(--sp-3);
+  background-color: var(--control-fill);
+  border: 1px solid var(--control-stroke);
+  border-radius: var(--radius-control);
+}
+
+.button .icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.button:hover {
+  background-color: var(--control-fill-hover);
+}
+
+.button:active {
+  background-color: var(--control-fill-pressed);
+}
+
+/* Square button with only an icon and no background until hovered. */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-2);
+}
+
+.icon-button:hover {
+  background-color: var(--control-fill);
+  color: var(--text);
+}
+
+/* ---------- Tooltip ---------- */
+
+.has-tooltip {
+  position: relative;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 10;
+  padding: var(--sp-1) var(--sp-2);
+  white-space: nowrap;
+  text-align: left;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--text);
+  background-color: var(--acrylic);
+  backdrop-filter: blur(var(--acrylic-blur));
+  border: 1px solid var(--control-stroke);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-flyout);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.has-tooltip:hover .tooltip,
+.has-tooltip:focus-visible .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tooltip-hint {
+  display: block;
+  color: var(--text-3);
+}
+
+.tooltip--right {
+  top: 50%;
+  left: calc(100% + var(--sp-2));
+  transform: translateY(-50%);
+}
+
+.tooltip--bottom {
+  top: calc(100% + var(--sp-1));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip--bottom-end {
+  top: calc(100% + var(--sp-1));
+  right: 0;
+}
+
+/* ---------- Top bar ---------- */
+
+/* Three columns so the search stays exactly in the middle. */
+.topbar {
+  position: relative;
+  z-index: 2; /* tooltips appear above the workspace */
+  display: grid;
+  grid-template-columns: 1fr minmax(0, var(--search-w)) 1fr;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-weight: var(--fw-strong);
+}
+
+.topbar-brand .icon {
+  color: var(--accent);
+}
+
+.topbar-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---------- Search field ---------- */
+
+.search {
+  display: flex;
+  align-items: center;
+  height: var(--control-h);
+  background-color: var(--control-fill);
+  border: 1px solid var(--control-stroke);
+  border-bottom-color: var(--control-stroke-strong);
+  border-radius: var(--radius-control);
+}
+
+.search:hover {
+  background-color: var(--control-fill-hover);
+}
+
+.search:focus-within {
+  border-bottom-color: var(--accent);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--sp-3);
+  background: none;
+  border: 0;
+}
+
+.search-input::placeholder {
+  color: var(--text-3);
+}
+
+/* The whole field already shows focus with its purple line and ring. */
+.search-input:focus-visible {
+  outline: none;
+}
+
+.search:has(.search-input:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.search-button {
+  width: var(--control-h);
+  height: 100%;
+}
+
+.search-button .icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+/* ---------- Ribbon ---------- */
+
+.ribbon {
+  position: relative;
+  z-index: 2; /* tooltips appear above the workspace */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding-top: var(--sp-1);
+}
+
+.ribbon-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--ribbon-w) - 2 * var(--sp-1));
+  height: var(--ribbon-button-h);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-2);
+}
+
+.ribbon-button:hover {
+  background-color: var(--control-fill);
+  color: var(--text);
+}
+
+.ribbon-button.is-active {
+  background-color: var(--control-fill);
+  color: var(--text);
+}
+
+/* Purple bar on the left edge of the active button. */
+.ribbon-button.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: var(--indicator-w);
+  height: var(--indicator-h);
+  transform: translateY(-50%);
+  background-color: var(--accent);
+  border-radius: var(--indicator-w);
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-2);
+}
+
+.tablist {
+  display: flex;
+  min-width: 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: var(--control-h);
+  padding: 0 var(--sp-1) 0 var(--sp-3);
+  color: var(--text-2);
+  border-radius: var(--radius-tab) var(--radius-tab) 0 0;
+}
+
+/* The active tab has the graph's color, so it looks attached to the map below. */
+.tab.is-active {
+  background-color: var(--canvas);
+  color: var(--text);
+}
+
+.tab-select {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.tab-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tab-dot {
+  flex: none;
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 50%;
+  background-color: var(--node-idle);
+}
+
+.tab.is-active .tab-dot {
+  background-color: var(--node-center);
+}
+
+.tab-close,
+.tab-add {
+  width: var(--control-h);
+  height: var(--control-h);
+}
+
+.tab-close .icon,
+.tab-add .icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
 
 /* ---------- Graph ---------- */
 
-/* For now the map fills the window; the page layout comes in a later step. */
-.graph {
-  position: fixed;
-  inset: 0;
+.graph-area {
+  position: relative;
+  overflow: hidden;
   background-color: var(--canvas);
+}
+
+.graph {
+  position: absolute;
+  inset: 0;
 }
 
 .graph.is-pointing {
   cursor: pointer;
+}
+
+.graph-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  text-align: center;
+  color: var(--text-2);
+  pointer-events: none;
+}
+
+/* ---------- Status bar ---------- */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-6);
+  padding: 0 var(--sp-4);
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--text-3);
+}
+
+/* ---------- Disabled ---------- */
+
+/*
+  Buttons for features that are not ready yet: visible and focusable (so the
+  "Coming soon" hint can be read), but inactive. Last in the file so it wins
+  over the hover styles above.
+*/
+[aria-disabled="true"],
+[aria-disabled="true"]:hover,
+[aria-disabled="true"]:active {
+  background-color: transparent;
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.button[aria-disabled="true"] {
+  background-color: var(--control-fill);
 }

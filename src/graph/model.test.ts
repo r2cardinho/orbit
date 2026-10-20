@@ -60,6 +60,19 @@ describe('hasPerson, getPerson and getPeople', () => {
   })
 })
 
+describe('clear', () => {
+  it('removes people, follows and the center', () => {
+    const model = buildModel(['ana', 'bia'], [['ana', 'bia']])
+    model.setCenter('ana')
+    model.clear()
+
+    expect(model.peopleCount).toBe(0)
+    expect(model.linkCount).toBe(0)
+    expect(model.getCenter()).toBeNull()
+    expect(model.follows('ana', 'bia')).toBe(false)
+  })
+})
+
 describe('setCenter, getCenter and isCenter', () => {
   it('has no center on a new map', () => {
     expect(new GraphModel().getCenter()).toBeNull()

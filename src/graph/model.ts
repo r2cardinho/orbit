@@ -48,6 +48,14 @@ export class GraphModel {
   private readonly followers = new Map<string, Set<string>>()
   private centerKey: string | null = null
 
+  /** Removes everyone, to start a new map. */
+  clear(): void {
+    this.people.clear()
+    this.following.clear()
+    this.followers.clear()
+    this.centerKey = null
+  }
+
   // ---------- Center ----------
 
   /** Puts `login` at the center of the map. They must already be on the map. */

@@ -5,6 +5,7 @@
 // - Responses are cached (see cache.ts) so the same data never costs two requests.
 // - The optional personal token lives only in this module's memory.
 
+import { strings } from '../ui/strings.ts'
 import { readCache, writeCache } from './cache.ts'
 
 const API_URL = 'https://api.github.com'
@@ -81,10 +82,16 @@ export function hasToken(): boolean {
 // ---------- Rate limit ----------
 
 let rateLimit: RateLimit | null = null
+const rateLimitListeners: ((rateLimit: RateLimit) => void)[] = []
 
 /** The rate limit from the last response, or `null` before the first request. */
 export function getRateLimit(): RateLimit | null {
   return rateLimit
+}
+
+/** Calls `listener` every time a response brings new rate limit numbers. */
+export function onRateLimitChange(listener: (rateLimit: RateLimit) => void): void {
+  rateLimitListeners.push(listener)
 }
 
 function readRateLimit(headers: Headers): void {
@@ -98,20 +105,37 @@ function readRateLimit(headers: Headers): void {
     remaining: Number(remaining),
     resetAt: new Date(Number(reset) * 1000), // GitHub sends seconds, Date wants milliseconds
   }
+  for (const listener of rateLimitListeners) listener(rateLimit)
 }
 
 // ---------- Requests ----------
 
-/** Fetches `path` from the API and turns any failure into a `GitHubError`. */
-async function request(path: string, login: string): Promise<Response> {
+function requestHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
   if (token !== null) headers.Authorization = `Bearer ${token}`
+  return headers
+}
 
+/**
+ * Asks GitHub how many requests are left, so the status bar has numbers even when
+ * everything came from the cache. This call does not count against the limit.
+ */
+export async function refreshRateLimit(): Promise<void> {
+  try {
+    const response = await fetch(`${API_URL}/rate_limit`, { headers: requestHeaders() })
+    readRateLimit(response.headers)
+  } catch {
+    // Offline: the numbers will come with the next request that works.
+  }
+}
+
+/** Fetches `path` from the API and turns any failure into a `GitHubError`. */
+async function request(path: string, login: string): Promise<Response> {
   let response: Response
   try {
-    response = await fetch(API_URL + path, { headers })
+    response = await fetch(API_URL + path, { headers: requestHeaders() })
   } catch {
-    throw new GitHubError('network', 'Could not reach GitHub. Check your internet connection and try again.')
+    throw new GitHubError('network', strings.errors.network)
   }
 
   readRateLimit(response.headers)
@@ -124,30 +148,19 @@ function errorFromResponse(response: Response, login: string): GitHubError {
     case 404:
       return notFoundError(login)
     case 401:
-      return new GitHubError(
-        'bad-token',
-        'GitHub rejected the token. Check that it was copied correctly, or remove it to continue without one.',
-      )
+      return new GitHubError('bad-token', strings.errors.badToken)
     case 403:
     case 429: {
       const resetAt = rateLimitResetTime(response.headers)
-      const tip = hasToken() ? '' : ' Add a token to raise the limit to 5,000 requests per hour.'
-      return new GitHubError(
-        'rate-limit',
-        `GitHub rate limit reached. Resets at ${formatTime(resetAt)}.${tip}`,
-        resetAt,
-      )
+      return new GitHubError('rate-limit', strings.errors.rateLimit(resetAt, hasToken()), resetAt)
     }
     default:
-      return new GitHubError(
-        'unexpected',
-        `GitHub returned an unexpected error (${response.status}). Try again in a moment.`,
-      )
+      return new GitHubError('unexpected', strings.errors.unexpected(response.status))
   }
 }
 
 function notFoundError(login: string): GitHubError {
-  return new GitHubError('not-found', `GitHub user "${login}" not found. Check the spelling and try again.`)
+  return new GitHubError('not-found', strings.errors.notFound(login))
 }
 
 /**
@@ -163,11 +176,6 @@ function rateLimitResetTime(headers: Headers): Date {
   if (rateLimit !== null && rateLimit.remaining === 0) return rateLimit.resetAt
 
   return new Date(Date.now() + 60 * 1000)
-}
-
-/** US English time, e.g. "4:40 PM". */
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
 function checkLogin(login: string): void {

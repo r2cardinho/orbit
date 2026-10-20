@@ -18,6 +18,8 @@
 
   /* ---------- Controls ---------- */
   --control-fill: rgba(255, 255, 255, 0.06);   /* default button, text field, active item */
+  --control-fill-hover: rgba(255, 255, 255, 0.084);  /* control under the mouse */
+  --control-fill-pressed: rgba(255, 255, 255, 0.033); /* control being clicked */
   --control-stroke: rgba(255, 255, 255, 0.08); /* border of controls and panels */
   --control-stroke-strong: rgba(255, 255, 255, 0.54); /* bottom line of text fields */
   --layer-stroke: rgba(0, 0, 0, 0.35);         /* border of the central area and cards */
@@ -27,6 +29,7 @@
   --text: #ffffff;
   --text-2: #c5c5c5;   /* secondary */
   --text-3: #9d9d9d;   /* tertiary: captions, counts */
+  --text-disabled: rgba(255, 255, 255, 0.36); /* buttons that do not work yet */
 
   /* ---------- Accent (Obsidian purple) ---------- */
   --accent: #9d8cff;       /* primary button, selected person, mutual connections */
@@ -81,6 +84,13 @@
   --ribbon-w: 48px;
   --sidebar-w: 240px;
   --profile-w: 320px;
+  --search-w: 480px;       /* search field in the top bar */
+  --ribbon-button-h: 36px; /* icon buttons in the ribbon */
+  --icon-size: 20px;
+  --icon-size-small: 16px; /* icons inside buttons and tabs */
+  --indicator-w: 3px;      /* purple bar on the active ribbon button */
+  --indicator-h: 16px;
+  --dot-size: 8px;         /* dot on each tab */
 
   /* ---------- Corners ---------- */
   --radius-control: 4px;  /* buttons, fields, list items */
@@ -100,6 +110,7 @@
 
   /* ---------- Focus ---------- */
   --focus-ring: 2px solid var(--text);
+  --focus-offset: 1px;
 }
 
 @media (prefers-reduced-motion: reduce) {

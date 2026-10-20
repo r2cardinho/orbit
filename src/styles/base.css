@@ -13,6 +13,7 @@ body {
 }
 
 body {
+  overflow: hidden; /* the app fills the window; panels scroll on their own */
   font-family: var(--font);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
@@ -22,4 +23,29 @@ body {
   background-color: var(--mica);
   background-image: radial-gradient(circle at top left, var(--mica-tint), transparent 60%);
   background-attachment: fixed;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+p {
+  margin: 0;
+}
+
+/* `hidden` must win even over components that set their own `display`. */
+[hidden] {
+  display: none !important;
+}
+
+/* Keyboard focus is always visible. */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }

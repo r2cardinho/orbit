@@ -226,6 +226,8 @@ export class GraphView {
       autounselectify: true, // selection is handled by the `selected` class
     })
 
+    this.resetCamera()
+
     this.cy.on('tap', 'node', (event) => handlers.onPersonClick(event.target.data('login')))
     this.cy.on('tap', (event) => {
       if (event.target === this.cy) handlers.onBackgroundClick()
@@ -242,6 +244,21 @@ export class GraphView {
     })
     this.refreshClasses()
     this.runLayout(options.fit ?? false)
+  }
+
+  /** Removes everything from the screen, to start a new map. */
+  clear(): void {
+    this.layout?.stop()
+    this.layout = null
+    this.selected = null
+    this.cy.elements().remove()
+    this.resetCamera()
+  }
+
+  /** 100% zoom with the point (0, 0), where a new map starts, in the middle of the screen. */
+  private resetCamera(): void {
+    this.cy.zoom(1)
+    this.cy.pan({ x: this.cy.width() / 2, y: this.cy.height() / 2 })
   }
 
   /** Selects a person (or nobody, with `null`) and dims everyone who is not a neighbor. */
