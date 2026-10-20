@@ -105,7 +105,7 @@
   /* ---------- Motion ---------- */
   --dur-fast: 167ms;
   --dur-normal: 250ms;
-  --dur-layout: 600ms;     /* new people spreading out from the expanded person */
+  --dur-camera: 400ms;     /* camera moving to show the whole map */
   --ease: cubic-bezier(0, 0, 0, 1);
 
   /* ---------- Focus ---------- */
@@ -114,5 +114,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --dur-fast: 0ms; --dur-normal: 0ms; --dur-layout: 0ms; }
+  :root { --dur-fast: 0ms; --dur-normal: 0ms; --dur-camera: 0ms; }
 }

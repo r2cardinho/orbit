@@ -7,18 +7,16 @@
 // - people: `center`, `expanded`, `selected`, `common` (in common with the center), `dimmed`
 // - lines:  `mutual`, `highlighted` (touches the selected person), `dimmed`
 // A person with no class is "not expanded".
+//
+// Where each person is comes from the live physics (physics.ts). On every step of the
+// simulation the new positions are copied into Cytoscape.
 
 import cytoscape from 'cytoscape'
-import fcose from 'cytoscape-fcose'
 import type { GraphModel, Link } from './model.ts'
+import { GraphPhysics } from './physics.ts'
 
-cytoscape.use(fcose)
-
-// Layout physics (how the people push and pull each other). Not design tokens:
-// they shape the force simulation, not the look.
-const IDEAL_EDGE_LENGTH = 120
-const NODE_REPULSION = 12000
-const NODE_SEPARATION = 100
+const SPAWN_RADIUS = 30 // new people start in a circle this size around who was expanded
+const FIT_ENERGY = 0.1 // the camera fits the map once the physics calms down to this
 const ARROW_SCALE = 0.6 // arrow size relative to the line width
 const MIN_ZOOM = 0.2
 const MAX_ZOOM = 2.5
@@ -31,22 +29,8 @@ export interface GraphViewHandlers {
 export interface UpdateOptions {
   /** New people appear around this person (the one just expanded). */
   origin?: string
-  /** Zoom to show the whole map after the layout. */
+  /** Move the camera to show the whole map once the people settle. */
   fit?: boolean
-}
-
-/** Options of the fcose layout used here (Cytoscape's own types do not know them). */
-interface FcoseLayoutOptions extends cytoscape.BaseLayoutOptions {
-  name: 'fcose'
-  randomize: boolean
-  animate: boolean
-  animationDuration: number
-  animationEasing: string
-  fit: boolean
-  padding: number
-  idealEdgeLength: number
-  nodeRepulsion: number
-  nodeSeparation: number
 }
 
 // ---------- Tokens ----------
@@ -84,7 +68,7 @@ function readTokens() {
     fontWeightStrong: number('--fw-strong'),
     labelGap: number('--sp-1'),
     padding: number('--sp-8'),
-    layoutDuration: number('--dur-layout'),
+    cameraDuration: number('--dur-camera'),
     ease: value('--ease'),
   }
 }
@@ -211,8 +195,9 @@ export class GraphView {
   private readonly cy: cytoscape.Core
   private readonly model: GraphModel
   private readonly tokens: Tokens
-  private layout: cytoscape.Layouts | null = null
+  private readonly physics: GraphPhysics
   private selected: string | null = null
+  private fitPending = false
 
   constructor(container: HTMLElement, model: GraphModel, handlers: GraphViewHandlers) {
     this.model = model
@@ -226,7 +211,15 @@ export class GraphView {
       autounselectify: true, // selection is handled by the `selected` class
     })
 
+    this.physics = new GraphPhysics(() => this.syncPositions())
     this.resetCamera()
+
+    // Dragging pins the person under the mouse; the physics makes the neighbors follow.
+    this.cy.on('drag', 'node', (event) => {
+      const { x, y } = event.target.position()
+      this.physics.hold(event.target.id(), x, y)
+    })
+    this.cy.on('free', 'node', (event) => this.physics.release(event.target.id()))
 
     this.cy.on('tap', 'node', (event) => handlers.onPersonClick(event.target.data('login')))
     this.cy.on('tap', (event) => {
@@ -236,21 +229,27 @@ export class GraphView {
     this.cy.on('mouseout', 'node', () => container.classList.remove('is-pointing'))
   }
 
-  /** Adds what is new in the model, removes what changed, and rearranges the map. */
+  /** Adds what is new in the model, removes what changed, and wakes up the physics. */
   update(options: UpdateOptions = {}): void {
     this.cy.batch(() => {
       this.syncPeople(options.origin)
       this.syncLinks()
     })
     this.refreshClasses()
-    this.runLayout(options.fit ?? false)
+    if (options.fit === true) this.fitPending = true
+
+    this.physics.update(
+      this.cy.nodes().map((node) => ({ id: node.id(), ...node.position() })),
+      this.cy.edges().map((edge) => ({ source: edge.data('source'), target: edge.data('target') })),
+    )
   }
 
   /** Removes everything from the screen, to start a new map. */
   clear(): void {
-    this.layout?.stop()
-    this.layout = null
+    this.physics.clear()
+    this.fitPending = false
     this.selected = null
+    this.cy.stop() // cancels a camera movement in progress
     this.cy.elements().remove()
     this.resetCamera()
   }
@@ -271,15 +270,15 @@ export class GraphView {
     const newPeople = this.model.getPeople().filter((person) => this.cy.getElementById(nodeId(person.login)).empty())
     const start = this.originPosition(origin)
 
-    // New people start in a small circle around the origin, then the layout spreads them out.
+    // New people start in a small circle around the origin, then the physics spreads them out.
     newPeople.forEach((person, index) => {
       const angle = (2 * Math.PI * index) / newPeople.length
       this.cy.add({
         group: 'nodes',
         data: { id: nodeId(person.login), login: person.login },
         position: {
-          x: start.x + Math.cos(angle) * (IDEAL_EDGE_LENGTH / 2),
-          y: start.y + Math.sin(angle) * (IDEAL_EDGE_LENGTH / 2),
+          x: start.x + Math.cos(angle) * SPAWN_RADIUS,
+          y: start.y + Math.sin(angle) * SPAWN_RADIUS,
         },
       })
     })
@@ -348,35 +347,38 @@ export class GraphView {
     })
   }
 
-  private runLayout(fit: boolean): void {
-    this.layout?.stop()
+  /** Copies the positions from the physics to the screen. Called on every physics step. */
+  private syncPositions(): void {
+    this.cy.batch(() => {
+      this.cy.nodes().forEach((node) => {
+        if (node.grabbed()) return // the mouse is moving this one
+        const position = this.physics.position(node.id())
+        if (position !== undefined) node.position(position)
+      })
+    })
 
-    const duration = this.tokens.layoutDuration // 0 when the user prefers reduced motion
-    const options: FcoseLayoutOptions = {
-      name: 'fcose',
-      randomize: false, // start from the current positions so the map does not jump around
-      animate: duration > 0,
-      animationDuration: duration,
-      animationEasing: this.tokens.ease,
-      fit: false, // fitting is done by fitMap, which never zooms past 100%
-      padding: this.tokens.padding,
-      idealEdgeLength: IDEAL_EDGE_LENGTH,
-      nodeRepulsion: NODE_REPULSION,
-      nodeSeparation: NODE_SEPARATION,
-      stop: () => {
-        if (fit) this.fitMap()
-      },
+    if (this.fitPending && this.physics.energy < FIT_ENERGY) {
+      this.fitPending = false
+      this.fitMap()
     }
-    this.layout = this.cy.layout(options)
-    this.layout.run()
   }
 
-  /** Shows the whole map. A small map stays at 100% instead of being blown up. */
+  /** Moves the camera to show the whole map. A small map stays at 100% instead of being blown up. */
   private fitMap(): void {
-    this.cy.fit(undefined, this.tokens.padding)
-    if (this.cy.zoom() > 1) {
-      this.cy.zoom(1)
-      this.cy.center()
+    const box = this.cy.elements().boundingBox()
+    const padding = this.tokens.padding
+    const zoom = Math.max(
+      MIN_ZOOM,
+      Math.min(1, (this.cy.width() - 2 * padding) / box.w, (this.cy.height() - 2 * padding) / box.h),
+    )
+    // Pan so that the middle of the map lands in the middle of the screen.
+    const pan = {
+      x: this.cy.width() / 2 - zoom * (box.x1 + box.w / 2),
+      y: this.cy.height() / 2 - zoom * (box.y1 + box.h / 2),
     }
+
+    const duration = this.tokens.cameraDuration // 0 when the user prefers reduced motion
+    if (duration === 0) this.cy.viewport({ zoom, pan })
+    else this.cy.animate({ zoom, pan }, { duration, easing: this.tokens.ease as cytoscape.Css.TransitionTimingFunction })
   }
 }
