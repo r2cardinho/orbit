@@ -1,31 +1,69 @@
-// Entry point: loads the styles. The screen parts are added in the next steps.
+// Entry point: builds the screen and connects the API, the model and the graph.
 import './styles/tokens.css'
 import './styles/base.css'
-import { getFollowers, getFollowing, getProfile, getRateLimit } from './api/github.ts'
+import './styles/components.css'
+import { getFollowers, getFollowing, getProfile } from './api/github.ts'
+import { GraphModel } from './graph/model.ts'
+import { GraphView } from './graph/view.ts'
 
-// Temporary: shows a real user's data in the console until the graph exists.
-const TEST_USER = 'r2cardinho'
+// Temporary: the map always starts from this user until the search box exists.
+const START_USER = 'r2cardinho'
 
-async function logTestUser(): Promise<void> {
+const model = new GraphModel()
+
+const graphElement = document.createElement('div')
+graphElement.className = 'graph'
+document.querySelector<HTMLDivElement>('#app')!.append(graphElement)
+
+const view = new GraphView(graphElement, model, {
+  onPersonClick: (login) => {
+    view.select(login)
+    expand(login)
+  },
+  onBackgroundClick: () => view.select(null),
+})
+
+// People whose followers and following are being fetched right now.
+const expanding = new Set<string>()
+
+/** Fetches who follows `login` and who `login` follows, and adds them to the map. */
+async function expand(login: string): Promise<void> {
+  if (model.isExpanded(login) || expanding.has(login)) return
+  expanding.add(login)
+
   try {
-    const profile = await getProfile(TEST_USER)
-    console.log('Profile:', profile)
+    const [followers, following] = await Promise.all([getFollowers(login), getFollowing(login)])
+    const before = model.peopleCount
 
-    const followers = await getFollowers(TEST_USER)
-    console.log(`Followers (page ${followers.page}, more pages: ${followers.hasNextPage}):`, followers.users)
+    for (const user of followers.users) {
+      model.addPerson(user)
+      model.addFollow(user.login, login)
+    }
+    for (const user of following.users) {
+      model.addPerson(user)
+      model.addFollow(login, user.login)
+    }
+    model.markExpanded(login)
+    view.update({ origin: login, fit: model.isCenter(login) })
 
-    const following = await getFollowing(TEST_USER)
-    console.log(`Following (page ${following.page}, more pages: ${following.hasNextPage}):`, following.users)
+    console.log(`${login} expanded. ${model.peopleCount - before} new people on the map.`)
   } catch (error) {
     console.error(error)
-  }
-
-  const rateLimit = getRateLimit()
-  if (rateLimit === null) {
-    console.log('Rate limit: no request made (everything came from the cache).')
-  } else {
-    console.log(`${rateLimit.remaining} of ${rateLimit.limit} requests left this hour. Resets at ${rateLimit.resetAt.toLocaleTimeString('en-US')}.`)
+  } finally {
+    expanding.delete(login)
   }
 }
 
-logTestUser()
+async function startMap(login: string): Promise<void> {
+  try {
+    const profile = await getProfile(login)
+    model.addPerson(profile)
+    model.setCenter(profile.login)
+    view.update({ fit: true })
+    await expand(profile.login)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+startMap(START_USER)

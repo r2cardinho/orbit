@@ -1,0 +1,14 @@
+/* Components: graph, buttons, fields, lists, panels. Every value comes from tokens.css. */
+
+/* ---------- Graph ---------- */
+
+/* For now the map fills the window; the page layout comes in a later step. */
+.graph {
+  position: fixed;
+  inset: 0;
+  background-color: var(--canvas);
+}
+
+.graph.is-pointing {
+  cursor: pointer;
+}

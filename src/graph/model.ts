@@ -46,6 +46,24 @@ export class GraphModel {
   private readonly people = new Map<string, Person>()
   private readonly following = new Map<string, Set<string>>()
   private readonly followers = new Map<string, Set<string>>()
+  private centerKey: string | null = null
+
+  // ---------- Center ----------
+
+  /** Puts `login` at the center of the map. They must already be on the map. */
+  setCenter(login: string): void {
+    this.requirePerson(login)
+    this.centerKey = keyOf(login)
+  }
+
+  /** The login at the center, or `null` before the map has one. */
+  getCenter(): string | null {
+    return this.centerKey === null ? null : this.people.get(this.centerKey)!.login
+  }
+
+  isCenter(login: string): boolean {
+    return this.centerKey === keyOf(login)
+  }
 
   // ---------- People ----------
 

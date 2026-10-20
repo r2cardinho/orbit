@@ -60,6 +60,25 @@ describe('hasPerson, getPerson and getPeople', () => {
   })
 })
 
+describe('setCenter, getCenter and isCenter', () => {
+  it('has no center on a new map', () => {
+    expect(new GraphModel().getCenter()).toBeNull()
+  })
+
+  it('puts a person at the center, ignoring case', () => {
+    const model = buildModel(['Ana', 'bia'])
+    model.setCenter('ana')
+
+    expect(model.getCenter()).toBe('Ana')
+    expect(model.isCenter('ANA')).toBe(true)
+    expect(model.isCenter('bia')).toBe(false)
+  })
+
+  it('refuses a center who is not on the map', () => {
+    expect(() => new GraphModel().setCenter('ana')).toThrow('"ana" is not on the map.')
+  })
+})
+
 describe('markExpanded and isExpanded', () => {
   it('marks a person as expanded', () => {
     const model = buildModel(['ana', 'bia'])

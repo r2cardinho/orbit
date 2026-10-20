@@ -52,6 +52,11 @@
   --node-size-expanded: 18px;
   --node-size-idle: 12px;
   --node-size-selected: 20px;
+  --node-ring: 2px;          /* center: gap and ring around the white dot */
+  --node-halo: 6px;          /* selected: glow around the purple dot */
+  --halo-opacity: 0.3;
+  --edge-width: 1px;         /* "follows" */
+  --edge-width-mutual: 1.5px;
 
   /* ---------- Typography (Windows 11 type ramp) ---------- */
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -90,6 +95,7 @@
   /* ---------- Motion ---------- */
   --dur-fast: 167ms;
   --dur-normal: 250ms;
+  --dur-layout: 600ms;     /* new people spreading out from the expanded person */
   --ease: cubic-bezier(0, 0, 0, 1);
 
   /* ---------- Focus ---------- */
@@ -97,5 +103,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --dur-fast: 0ms; --dur-normal: 0ms; }
+  :root { --dur-fast: 0ms; --dur-normal: 0ms; --dur-layout: 0ms; }
 }
