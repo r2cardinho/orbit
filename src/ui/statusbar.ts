@@ -54,9 +54,19 @@ export function createStatusbar(handlers: StatusbarHandlers): Statusbar {
 
   let resetAt: Date | null = null
   let resetHandled = false // so the refill is announced only once per countdown
+  let full = false // nothing used yet
 
   function updateCountdown(): void {
     if (resetAt === null) return
+
+    // GitHub's hour starts with the first request used. Before that, the reset time it
+    // sends is just "one hour from now" and keeps moving, so there is nothing to count.
+    if (full) {
+      countdownTime.textContent = text.full
+      countdownAt.textContent = text.fullHint
+      return
+    }
+
     const timeLeft = resetAt.getTime() - Date.now()
 
     if (timeLeft <= 0) {
@@ -87,6 +97,7 @@ export function createStatusbar(handlers: StatusbarHandlers): Statusbar {
       requestsText.textContent = text.requestsLeft(rateLimit.remaining, rateLimit.limit)
       requests.hidden = false
       resetAt = rateLimit.resetAt
+      full = rateLimit.remaining >= rateLimit.limit
       // If GitHub sends a time that already passed, do not ask again in a loop.
       resetHandled = rateLimit.resetAt.getTime() <= Date.now()
       updateCountdown()

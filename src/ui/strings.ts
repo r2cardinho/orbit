@@ -66,6 +66,8 @@ export const strings = {
     resetsIn: (countdown: string) => `Resets in ${countdown}`,
     resetsAt: (date: Date) => `At ${formatTime(date)}`,
     resetNow: 'Requests refilled. Updating…',
+    full: 'All requests available',
+    fullHint: 'The hour starts with your next request',
   },
 
   errors: {
