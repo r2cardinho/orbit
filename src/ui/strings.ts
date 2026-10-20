@@ -11,6 +11,16 @@ export function formatTime(date: Date): string {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+/** Time left as a stopwatch: "42:07", or "1:02:07" from one hour up. */
+export function formatCountdown(milliseconds: number): string {
+  const totalSeconds = Math.ceil(milliseconds / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const twoDigits = (value: number) => String(value).padStart(2, '0')
+  return hours > 0 ? `${hours}:${twoDigits(minutes)}:${twoDigits(seconds)}` : `${minutes}:${twoDigits(seconds)}`
+}
+
 /** "1 person" / "18 people" */
 function count(value: number, singular: string, plural: string): string {
   return `${formatNumber(value)} ${value === 1 ? singular : plural}`
@@ -53,6 +63,9 @@ export const strings = {
     mutual: (value: number) => `${formatNumber(value)} mutual`,
     requestsLeft: (remaining: number, limit: number) =>
       `${formatNumber(remaining)} of ${formatNumber(limit)} requests left this hour`,
+    resetsIn: (countdown: string) => `Resets in ${countdown}`,
+    resetsAt: (date: Date) => `At ${formatTime(date)}`,
+    resetNow: 'Requests refilled. Updating…',
   },
 
   errors: {

@@ -18,7 +18,7 @@ app.className = 'app'
 
 const topbar = createTopbar({ onSearch: (login) => startMap(login) })
 const tabs = createTabs({ onClose: () => closeMap() })
-const statusbar = createStatusbar()
+const statusbar = createStatusbar({ onRateLimitReset: () => refreshRateLimit() })
 
 const graphArea = document.createElement('div')
 graphArea.className = 'graph-area'

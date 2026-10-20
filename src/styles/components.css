@@ -134,6 +134,11 @@
   right: 0;
 }
 
+.tooltip--top-end {
+  bottom: calc(100% + var(--sp-1));
+  right: 0;
+}
+
 /* ---------- Top bar ---------- */
 
 /* Three columns so the search stays exactly in the middle. */
@@ -372,11 +377,33 @@
   justify-content: flex-end;
   gap: var(--sp-6);
   padding: 0 var(--sp-4);
-  overflow: hidden;
   white-space: nowrap;
   font-size: var(--fs-caption);
   line-height: var(--lh-caption);
   color: var(--text-3);
+}
+
+/* Requests left, with a clock: hover or focus shows the countdown to the refill. */
+.status-requests {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  border-radius: var(--radius-control);
+  cursor: default;
+}
+
+.status-requests:hover {
+  color: var(--text-2);
+}
+
+.status-requests .icon {
+  width: var(--icon-size-caption);
+  height: var(--icon-size-caption);
+}
+
+/* The countdown is the main line of its tooltip. */
+.countdown-time {
+  font-variant-numeric: tabular-nums; /* digits keep the same width, so the text does not jiggle */
 }
 
 /* ---------- Disabled ---------- */

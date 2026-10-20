@@ -88,6 +88,7 @@
   --ribbon-button-h: 36px; /* icon buttons in the ribbon */
   --icon-size: 20px;
   --icon-size-small: 16px; /* icons inside buttons and tabs */
+  --icon-size-caption: 14px; /* icons next to small text, like in the status bar */
   --indicator-w: 3px;      /* purple bar on the active ribbon button */
   --indicator-h: 16px;
   --dot-size: 8px;         /* dot on each tab */
