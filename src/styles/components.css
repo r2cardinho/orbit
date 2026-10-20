@@ -294,6 +294,11 @@
   border-radius: var(--radius-tab) var(--radius-tab) 0 0;
 }
 
+/* The close button normally fills the right side; without it, mirror the left padding. */
+.tab:has(.tab-close[hidden]) {
+  padding-right: var(--sp-3);
+}
+
 /* The active tab has the graph's color, so it looks attached to the map below. */
 .tab.is-active {
   background-color: var(--canvas);
