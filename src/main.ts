@@ -34,6 +34,10 @@ import { createTopbar } from './ui/topbar.ts'
 
 let settings: MapSettings = { ...DEFAULT_SETTINGS }
 
+// Phones: below 760px (the same width as the CSS media queries). There the people list
+// and "Map settings" open over the map from the top bar buttons, and start closed.
+const phone = window.matchMedia('(max-width: 759.98px)')
+
 // ---------- Screen ----------
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -42,12 +46,19 @@ app.className = 'app'
 const topbar = createTopbar({
   onSearch: (login) => startMap(login),
   onAddToken: () => tokenDialog.open(hasToken()),
+  onToggleMenu: () => setPeopleOpen(!peopleOpen),
+  onToggleSettings: () => setSettingsOpen(!settingsOpen),
 })
 const ribbon = createRibbon({
   onTogglePeople: () => setPeopleOpen(!peopleOpen),
   onToggleSettings: () => setSettingsOpen(!settingsOpen),
 })
-const peopleList = createPeopleList({ onSelect: (login) => selectPerson(login, true) })
+const peopleList = createPeopleList({
+  onSelect: (login) => {
+    if (phone.matches) setPeopleOpen(false) // on phones the list covers the map: close it to show the choice
+    selectPerson(login, true)
+  },
+})
 const tabs = createTabs({ onClose: () => closeMap() })
 const statusbar = createStatusbar({ onRateLimitReset: () => refreshRateLimit() })
 const profilePanel = createProfilePanel({
@@ -59,6 +70,7 @@ const infobar = createInfobar()
 const settingsPanel = createSettingsPanel({
   onChange: (next) => applySettings(next),
   onClose: () => setSettingsOpen(false),
+  onAddToken: () => tokenDialog.open(hasToken()),
 })
 const mapControls = createMapControls({
   onZoomIn: () => view.zoomIn(),
@@ -90,20 +102,41 @@ app.append(topbar.element, ribbon.element, peopleList.element, workspace, profil
 document.body.append(tokenDialog.element)
 
 let peopleOpen = true
-let settingsOpen = true // "Map settings" starts open, as in the approved design
+let settingsOpen = true
 
 function setPeopleOpen(open: boolean): void {
   peopleOpen = open
   peopleList.element.hidden = !open
   app.classList.toggle('is-people-closed', !open)
   ribbon.setPeopleOpen(open)
+  topbar.setMenuOpen(open)
+  if (open && phone.matches && settingsOpen) setSettingsOpen(false) // one panel at a time on phones
 }
 
 function setSettingsOpen(open: boolean): void {
   settingsOpen = open
   settingsPanel.setOpen(open)
   ribbon.setSettingsOpen(open)
+  topbar.setSettingsOpen(open)
+  if (open && phone.matches && peopleOpen) setPeopleOpen(false)
 }
+
+/**
+ * Computers start with the people list and "Map settings" open, as in the approved
+ * design. Phones start with both closed, so the map has the whole screen.
+ */
+function applyLayout(): void {
+  setPeopleOpen(!phone.matches)
+  setSettingsOpen(!phone.matches)
+}
+phone.addEventListener('change', applyLayout)
+
+// Esc closes the panels that cover the map on phones.
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || !phone.matches) return
+  if (peopleOpen) setPeopleOpen(false)
+  if (settingsOpen) setSettingsOpen(false)
+})
 
 // ---------- Map state ----------
 
@@ -115,6 +148,12 @@ const view = new GraphView(graphElement, model, {
   onBackgroundClick: () => selectPerson(null, false),
   onZoom: (percent) => mapControls.setZoom(percent),
 })
+
+// On phones the profile drawer covers the bottom of the map: the camera centers above it.
+new ResizeObserver(() => {
+  const covers = phone.matches && !profilePanel.element.classList.contains('is-empty')
+  view.setBottomInset(covers ? profilePanel.element.offsetHeight : 0)
+}).observe(profilePanel.element)
 
 onRateLimitChange((rateLimit) => statusbar.setRateLimit(rateLimit))
 refreshRateLimit()
@@ -180,6 +219,7 @@ async function saveToken(token: string): Promise<string | null> {
     return errorMessage(error)
   }
   topbar.setHasToken(true)
+  settingsPanel.setHasToken(true)
   infobar.show({ kind: 'success', title: strings.notices.tokenAdded, detail: strings.notices.tokenAddedDetail })
   return null
 }
@@ -187,6 +227,7 @@ async function saveToken(token: string): Promise<string | null> {
 async function dropToken(): Promise<void> {
   await removeToken()
   topbar.setHasToken(false)
+  settingsPanel.setHasToken(false)
   infobar.show({ kind: 'success', title: strings.notices.tokenRemoved, detail: strings.notices.tokenRemovedDetail })
 }
 
@@ -408,7 +449,7 @@ function render(): void {
   profilePanel.show(selected === null || !model.hasPerson(selected) ? null : profileViewOf(selected, common))
 }
 
-setPeopleOpen(true)
-setSettingsOpen(true)
+applyLayout()
 render()
-topbar.focusSearch()
+// On phones, focusing the search would pop up the keyboard over the map right away.
+if (!phone.matches) topbar.focusSearch()

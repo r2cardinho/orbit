@@ -1,7 +1,8 @@
 // "Map settings": floating panel over the map, in three collapsible sections.
 // - Filters: "Mutual only" and "Show not expanded" (on/off switches);
 // - Display: "Node size" and "Spacing" (sliders, in percent of the normal value);
-// - GitHub requests: "Per click", how many people each list loads per click.
+// - GitHub requests: "Per click", how many people each list loads per click, and the
+//   token button (on phones the top bar has no room for it, so it lives here too).
 // Every change is reported at once with the full settings, so main.ts can apply them.
 
 import { icons } from './icons.ts'
@@ -30,11 +31,13 @@ const PER_CLICK_OPTIONS = [10, 20, 30, 50, 100] // GitHub allows at most 100 per
 export interface SettingsPanelHandlers {
   onChange(settings: MapSettings): void
   onClose(): void
+  onAddToken(): void
 }
 
 export interface SettingsPanel {
   element: HTMLElement
   setOpen(open: boolean): void
+  setHasToken(hasToken: boolean): void
 }
 
 export const SETTINGS_PANEL_ID = 'map-settings'
@@ -77,6 +80,12 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers): SettingsPa
         </select>
       </label>
       <p class="setting-hint" id="per-click-hint">${text.perClickHint}</p>
+      <div class="setting-row">
+        <span>${text.token}</span>
+        <button class="button token-button" type="button" aria-haspopup="dialog">
+          ${icons.key}<span class="token-button-label">${strings.topbar.addToken}</span>
+        </button>
+      </div>
     `)}
   `
 
@@ -100,6 +109,8 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers): SettingsPa
   // ---------- Events ----------
 
   element.querySelector('.flyout-close')!.addEventListener('click', () => handlers.onClose())
+  element.querySelector('.token-button')!.addEventListener('click', () => handlers.onAddToken())
+  const tokenLabel = element.querySelector<HTMLElement>('.token-button-label')!
 
   for (const header of element.querySelectorAll<HTMLButtonElement>('.flyout-section-header')) {
     header.addEventListener('click', () => {
@@ -130,6 +141,9 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers): SettingsPa
     element,
     setOpen: (open) => {
       element.hidden = !open
+    },
+    setHasToken: (hasToken) => {
+      tokenLabel.textContent = hasToken ? strings.topbar.editToken : strings.topbar.addToken
     },
   }
 }

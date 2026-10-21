@@ -213,6 +213,7 @@ export class GraphView {
   private selected: string | null = null
   private fitPending = false
   private display: DisplayOptions = { mutualOnly: false, showNotExpanded: true, nodeScale: 1 }
+  private bottomInset = 0 // part of the map covered at the bottom (the profile drawer on phones)
 
   constructor(container: HTMLElement, model: GraphModel, handlers: GraphViewHandlers) {
     this.model = model
@@ -381,7 +382,19 @@ export class GraphView {
   /** 100% zoom with the point (0, 0), where a new map starts, in the middle of the screen. */
   private resetCamera(): void {
     this.cy.zoom(1)
-    this.cy.pan({ x: this.cy.width() / 2, y: this.cy.height() / 2 })
+    this.cy.pan({ x: this.cy.width() / 2, y: this.visibleHeight() / 2 })
+  }
+
+  /**
+   * Tells the view how much of the bottom of the map is covered (in pixels), so the
+   * camera centers the map in the part that can still be seen.
+   */
+  setBottomInset(pixels: number): void {
+    this.bottomInset = pixels
+  }
+
+  private visibleHeight(): number {
+    return Math.max(this.cy.height() - this.bottomInset, 0)
   }
 
   /** Selects a person (or nobody, with `null`) and dims everyone who is not a neighbor. */
@@ -493,12 +506,12 @@ export class GraphView {
     const padding = this.tokens.padding
     const zoom = Math.max(
       MIN_ZOOM,
-      Math.min(1, (this.cy.width() - 2 * padding) / box.w, (this.cy.height() - 2 * padding) / box.h),
+      Math.min(1, (this.cy.width() - 2 * padding) / box.w, (this.visibleHeight() - 2 * padding) / box.h),
     )
     // Pan so that the middle of the map lands in the middle of the screen.
     const pan = {
       x: this.cy.width() / 2 - zoom * (box.x1 + box.w / 2),
-      y: this.cy.height() / 2 - zoom * (box.y1 + box.h / 2),
+      y: this.visibleHeight() / 2 - zoom * (box.y1 + box.h / 2),
     }
 
     const duration = this.tokens.cameraDuration // 0 when the user prefers reduced motion

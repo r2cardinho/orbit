@@ -105,6 +105,12 @@
   --toggle-knob: 12px;
   --slider-track-h: 4px;
   --slider-thumb: 18px;
+  --drawer-w: 300px;            /* people list on phones, sliding over the map */
+  --sheet-h: 50dvh;             /* profile drawer on phones, lowered */
+  --sheet-h-expanded: 85dvh;    /* profile drawer on phones, raised */
+  --handle-w: 40px;             /* bar on top of the profile drawer */
+  --handle-h: 4px;
+  --fs-touch-field: 16px;       /* text fields on phones: smaller text makes iPhones zoom in */
 
   /* ---------- Corners ---------- */
   --radius-control: 4px;  /* buttons, fields, list items */

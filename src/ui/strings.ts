@@ -36,6 +36,8 @@ export const strings = {
     searchSubmit: 'Map',
     addToken: 'Add token',
     editToken: 'Edit token',
+    menu: 'People on this map',
+    settings: 'Map settings',
   },
 
   ribbon: {
@@ -85,6 +87,7 @@ export const strings = {
     requests: 'GitHub requests',
     perClick: 'Per click',
     perClickHint: 'People loaded from each list (followers and following) on every click.',
+    token: 'GitHub token',
     percent: (value: number) => `${value}%`,
   },
 
@@ -167,6 +170,13 @@ export const strings = {
     loading: 'Loading…',
     allLoaded: 'All loaded',
     startMap: 'Start map here',
+    startMapShort: 'Start here',
+    onThisMap: 'On this map: ',
+    followsCount: (value: number) => `follows ${formatNumber(value)}`,
+    followedByCount: (value: number) => `followed by ${formatNumber(value)}`,
+    mutualCount: (value: number) => `${formatNumber(value)} mutual`,
+    expand: 'Show more of the profile',
+    collapse: 'Show less of the profile',
     followsOnMap: 'Follows on this map',
     followedBy: 'Followed by',
     mutual: 'Mutual',

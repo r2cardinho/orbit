@@ -3,6 +3,9 @@
 //
 // The panel only draws what it receives in a ProfileView; main.ts builds that view
 // from the model and the API, so this file never fetches anything by itself.
+//
+// On phones the panel is a drawer at the bottom of the screen. Its handle opens it
+// higher (bio, numbers, all connections) or lowers it again; CSS decides what shows.
 
 import type { GitHubProfile } from '../api/github.ts'
 import { icons } from './icons.ts'
@@ -66,13 +69,34 @@ export function createProfilePanel(handlers: ProfilePanelHandlers): ProfilePanel
   element.className = 'profile-panel'
   element.setAttribute('aria-label', text.label)
 
+  // Drawer state on phones: lowered (false) or raised (true). A new person starts lowered.
+  let expanded = false
+  let shownLogin: string | null = null
+
   function show(view: ProfileView | null): void {
     // Redrawing replaces the buttons, so the one with keyboard focus is found again by its key.
     const focusKey = (document.activeElement as HTMLElement | null)?.dataset.focusKey
     element.replaceChildren()
 
+    if (view?.login !== shownLogin) expanded = false
+    shownLogin = view?.login ?? null
+    element.classList.toggle('is-expanded', expanded)
+    element.classList.toggle('is-empty', view === null)
+
     if (view === null) element.append(el('p', 'profile-empty', text.empty))
-    else element.append(header(view), ...details(view), actions(view), counts(view), ...inCommon(view), connections(view))
+    else {
+      element.append(
+        // Computer order; on phones CSS moves the counts sentence and "In common" above the buttons.
+        handle(view),
+        header(view),
+        ...details(view),
+        actions(view),
+        counts(view),
+        countsSentence(view),
+        ...inCommon(view),
+        connections(view),
+      )
+    }
 
     if (focusKey !== undefined) {
       element.querySelector<HTMLElement>(`[data-focus-key="${CSS.escape(focusKey)}"]`)?.focus()
@@ -80,6 +104,35 @@ export function createProfilePanel(handlers: ProfilePanelHandlers): ProfilePanel
   }
 
   // ---------- Sections ----------
+
+  /** Phones only: the bar on top of the drawer, which raises or lowers it. */
+  function handle(view: ProfileView): HTMLElement {
+    const button = el('button', 'sheet-handle phone-only')
+    button.type = 'button'
+    button.dataset.focusKey = 'sheet-handle'
+    button.setAttribute('aria-expanded', String(expanded))
+    button.setAttribute('aria-label', expanded ? text.collapse : text.expand)
+    button.append(el('span', 'sheet-handle-bar'))
+    button.addEventListener('click', () => {
+      expanded = !expanded
+      show(view)
+    })
+    return button
+  }
+
+  /** Phones only: "On this map: follows 5, followed by 5, 3 mutual." */
+  function countsSentence(view: ProfileView): HTMLElement {
+    const sentence = el('p', 'profile-counts-sentence phone-only', text.onThisMap)
+    sentence.append(
+      text.followsCount(view.counts.follows),
+      strings.list.separator,
+      text.followedByCount(view.counts.followedBy),
+      strings.list.separator,
+      el('strong', 'is-accent', text.mutualCount(view.counts.mutual)),
+      '.',
+    )
+    return sentence
+  }
 
   function header(view: ProfileView): HTMLElement {
     const section = el('header', 'profile-header')
@@ -134,7 +187,9 @@ export function createProfilePanel(handlers: ProfilePanelHandlers): ProfilePanel
       if (view.loadMore === 'ready') handlers.onLoadMore(view.login)
     })
 
-    const startMap = el('button', 'button', text.startMap)
+    // The long label shows on computers, the short one on phones (only one is ever visible).
+    const startMap = el('button', 'button')
+    startMap.append(el('span', 'label-long', text.startMap), el('span', 'label-short', text.startMapShort))
     startMap.type = 'button'
     startMap.dataset.focusKey = 'start-map'
     startMap.disabled = view.isCenter

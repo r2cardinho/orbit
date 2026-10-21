@@ -1,5 +1,7 @@
 // Status bar under the graph: map totals and GitHub requests left.
 // Hovering (or focusing) the requests shows a countdown to when GitHub refills them.
+// On phones it becomes one line over the map, "18 people, 21 connections, 7 mutual":
+// the commas only show there.
 
 import type { RateLimit } from '../api/github.ts'
 import { icons } from './icons.ts'
@@ -30,8 +32,8 @@ export function createStatusbar(handlers: StatusbarHandlers): Statusbar {
   element.className = 'statusbar'
   element.setAttribute('aria-label', text.label)
   element.innerHTML = `
-    <span data-total="people"></span>
-    <span data-total="connections"></span>
+    <span data-total="people"></span><span class="status-separator">${strings.list.separator}</span>
+    <span data-total="connections"></span><span class="status-separator">${strings.list.separator}</span>
     <span data-total="mutual"></span>
     <span class="status-requests has-tooltip" tabindex="0" aria-describedby="${COUNTDOWN_ID}" hidden>
       ${icons.recent}

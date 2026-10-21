@@ -431,6 +431,13 @@
   pointer-events: none;
 }
 
+/* On computers, with "Map settings" open, center the message in the space left of the panel. */
+@media (min-width: 760px) {
+  .graph-area:has(.settings-panel:not([hidden])) .graph-empty {
+    padding-right: calc(var(--flyout-w) + 2 * var(--sp-4));
+  }
+}
+
 /* ---------- Status bar ---------- */
 
 .statusbar {
@@ -1363,4 +1370,237 @@
 
 .button[aria-disabled="true"] {
   background-color: var(--control-fill);
+}
+
+/* ---------- Phones (below 760px) ---------- */
+
+/* Pieces that only exist on phones, and the long/short label pair. */
+.phone-only,
+.label-short,
+.status-separator {
+  display: none;
+}
+
+/*
+  The width is written here because media queries cannot use var().
+  It is the same value as `phone` in main.ts.
+*/
+@media (max-width: 759.98px) {
+  /* One column: top bar, then the map. The lists open over the map. */
+  .app,
+  .app.is-people-closed {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "topbar"
+      "workspace";
+  }
+
+  .ribbon,
+  .tabs,
+  .legend,
+  .zoom-controls,
+  .topbar-brand,
+  .topbar .token-button,
+  .status-requests,
+  .profile-counts,
+  .label-long {
+    display: none;
+  }
+
+  .label-short,
+  .status-separator {
+    display: inline;
+  }
+
+  /* Keep the space after the comma: flex items drop spaces at their edges. */
+  .status-separator {
+    white-space: pre;
+  }
+
+  /* ----- Top bar: menu, search, settings ----- */
+
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .topbar-icon-button.phone-only {
+    display: inline-flex;
+    width: var(--control-h-touch);
+    height: var(--control-h-touch);
+    color: var(--text);
+  }
+
+  .search {
+    height: var(--control-h-touch);
+  }
+
+  .search-button {
+    width: var(--control-h-touch);
+  }
+
+  /* ----- Everything you tap is 44px tall ----- */
+
+  .button,
+  .select,
+  .text-field {
+    height: var(--control-h-touch);
+  }
+
+  .search-input,
+  .text-field,
+  .select {
+    font-size: var(--fs-touch-field);
+  }
+
+  .person-row,
+  .connection-row,
+  .people-group-header,
+  .people-show-more,
+  .flyout-section-header,
+  .setting-row {
+    height: auto;
+    min-height: var(--control-h-touch);
+  }
+
+  .flyout-close,
+  .infobar-close {
+    width: var(--control-h-touch);
+    height: var(--control-h-touch);
+  }
+
+  /* ----- Map: totals as one line on top, no frame around it ----- */
+
+  .workspace {
+    position: relative;
+    grid-template-rows: minmax(0, 1fr);
+    border: 0;
+    border-radius: 0;
+  }
+
+  .statusbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    justify-content: flex-start;
+    gap: 0;
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    pointer-events: none; /* only text: taps go through to the map */
+  }
+
+  /* The notice goes under the totals line. */
+  .infobar {
+    top: calc(2 * var(--sp-3) + var(--lh-body));
+    left: var(--sp-3);
+  }
+
+  .settings-panel {
+    top: var(--sp-2);
+    left: var(--sp-2);
+    right: var(--sp-2);
+    z-index: 3;
+    width: auto;
+  }
+
+  /* ----- People list: drawer from the left, over the map ----- */
+
+  .sidebar {
+    position: fixed;
+    top: calc(var(--control-h-touch) + 2 * var(--sp-2));
+    left: 0;
+    bottom: 0;
+    z-index: 4;
+    width: min(var(--drawer-w), 85vw);
+    padding: var(--sp-2) var(--sp-3) var(--sp-4);
+    background-color: var(--mica);
+    border-right: 1px solid var(--control-stroke);
+    box-shadow: var(--shadow-flyout);
+  }
+
+  /* ----- Profile: drawer from the bottom ----- */
+
+  .profile-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    gap: var(--sp-3);
+    max-height: var(--sheet-h);
+    padding: 0 var(--sp-4) var(--sp-4);
+    background-color: var(--card);
+    border-top: 1px solid var(--control-stroke);
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow: var(--shadow-sheet);
+  }
+
+  .profile-panel.is-expanded {
+    max-height: var(--sheet-h-expanded);
+  }
+
+  /* Nobody selected: no drawer, the whole map is free. */
+  .profile-panel.is-empty {
+    display: none;
+  }
+
+  /* Lowered drawer: only the essentials, like the approved design. */
+  .profile-panel:not(.is-expanded) .profile-bio,
+  .profile-panel:not(.is-expanded) .profile-stats {
+    display: none;
+  }
+
+  /* Phone order: counts sentence and "In common" come before the buttons. */
+  .profile-counts-sentence {
+    display: block;
+    order: 1;
+    color: var(--text-2);
+  }
+
+  .profile-counts-sentence .is-accent {
+    color: var(--accent-text);
+    font-weight: var(--fw-strong);
+  }
+
+  .profile-common {
+    order: 2;
+  }
+
+  .profile-actions {
+    order: 3;
+  }
+
+  .profile-connections {
+    order: 4;
+  }
+
+  /* The handle stays on top while the drawer scrolls. */
+  .sheet-handle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: calc(100% + 2 * var(--sp-4));
+    height: var(--control-h-touch);
+    margin: 0 calc(-1 * var(--sp-4));
+    padding: 0;
+    background-color: var(--card);
+    border: 0;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  }
+
+  .sheet-handle-bar {
+    width: var(--handle-w);
+    height: var(--handle-h);
+    border-radius: var(--handle-h);
+    background-color: var(--text-3);
+  }
 }

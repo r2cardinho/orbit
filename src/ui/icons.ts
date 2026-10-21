@@ -25,6 +25,8 @@ export const icons = {
   chevronRight: icon('<path d="m8 6 4 4-4 4"/>'),
   settings: icon('<circle cx="10" cy="10" r="2.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/><circle cx="10" cy="10" r="5.5"/>'),
   minus: icon('<path d="M4.5 10h11"/>'),
+  menu: icon('<path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/>'),
+  sliders: icon('<path d="M3.5 6h6M13.5 6h3M3.5 14h3M10.5 14h6"/><circle cx="11.5" cy="6" r="2"/><circle cx="8.5" cy="14" r="2"/>'),
   fit: icon('<path d="M3.5 7V4.5a1 1 0 0 1 1-1H7M13 3.5h2.5a1 1 0 0 1 1 1V7M16.5 13v2.5a1 1 0 0 1-1 1H13M7 16.5H4.5a1 1 0 0 1-1-1V13"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/>'),
   success: icon('<circle cx="10" cy="10" r="7.5" fill="currentColor"/><path d="m6.8 10.2 2.2 2.2 4.2-4.6" style="stroke: var(--on-accent)"/>'),
   error: icon('<circle cx="10" cy="10" r="7.5" fill="currentColor"/><path d="M10 6.2v4.6M10 13.6v.2" style="stroke: var(--on-accent)"/>'),
