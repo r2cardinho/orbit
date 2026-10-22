@@ -13,6 +13,8 @@ export interface TopbarHandlers {
   onAddToken(): void
   onToggleMenu(): void
   onToggleSettings(): void
+  /** The mouse entered the logo (its orbit animation starts). */
+  onLogoHover(): void
 }
 
 export interface Topbar {
@@ -75,6 +77,7 @@ export function createTopbar(handlers: TopbarHandlers): Topbar {
   const tokenLabel = element.querySelector<HTMLElement>('.token-button-label')!
   const menuButton = element.querySelector<HTMLButtonElement>('[data-action="menu"]')!
   const settingsButton = element.querySelector<HTMLButtonElement>('[data-action="settings"]')!
+  element.querySelector('.topbar-brand')!.addEventListener('mouseenter', () => handlers.onLogoHover())
   menuButton.addEventListener('click', () => handlers.onToggleMenu())
   settingsButton.addEventListener('click', () => handlers.onToggleSettings())
 

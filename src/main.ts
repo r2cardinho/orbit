@@ -26,13 +26,15 @@ import { createPeopleList, type PersonEntry, type PersonGroup } from './ui/peopl
 import { createProfilePanel, type Connection, type ProfileView, type Relation } from './ui/profile-panel.ts'
 import { createRibbon } from './ui/ribbon.ts'
 import { createSettingsPanel, DEFAULT_SETTINGS, type MapSettings } from './ui/settings-panel.ts'
+import { playError, playExpansion, playMutual, playOrbit, setSoundsEnabled, soundsEnabled } from './ui/sounds.ts'
 import { createStatusbar } from './ui/statusbar.ts'
 import { strings } from './ui/strings.ts'
 import { createTabs, MAP_PANEL_ID, MAP_TAB_ID } from './ui/tabs.ts'
 import { createTokenDialog } from './ui/token-dialog.ts'
 import { createTopbar } from './ui/topbar.ts'
 
-let settings: MapSettings = { ...DEFAULT_SETTINGS }
+// "Sounds" starts as it was on the last visit; everything else starts at the defaults.
+let settings: MapSettings = { ...DEFAULT_SETTINGS, sounds: soundsEnabled() }
 
 // Phones: below 760px (the same width as the CSS media queries). There the people list
 // and "Map settings" open over the map from the top bar buttons, and start closed.
@@ -48,6 +50,7 @@ const topbar = createTopbar({
   onAddToken: () => tokenDialog.open(hasToken()),
   onToggleMenu: () => setPeopleOpen(!peopleOpen),
   onToggleSettings: () => setSettingsOpen(!settingsOpen),
+  onLogoHover: () => playOrbit(cssSeconds('--dur-orbit')),
 })
 const ribbon = createRibbon({
   onTogglePeople: () => setPeopleOpen(!peopleOpen),
@@ -67,11 +70,14 @@ const profilePanel = createProfilePanel({
   onStartMap: (login) => startMap(login),
 })
 const infobar = createInfobar()
-const settingsPanel = createSettingsPanel({
-  onChange: (next) => applySettings(next),
-  onClose: () => setSettingsOpen(false),
-  onAddToken: () => tokenDialog.open(hasToken()),
-})
+const settingsPanel = createSettingsPanel(
+  {
+    onChange: (next) => applySettings(next),
+    onClose: () => setSettingsOpen(false),
+    onAddToken: () => tokenDialog.open(hasToken()),
+  },
+  settings,
+)
 const mapControls = createMapControls({
   onZoomIn: () => view.zoomIn(),
   onZoomOut: () => view.zoomOut(),
@@ -188,6 +194,18 @@ function errorMessage(error: unknown): string {
   return error instanceof GitHubError ? error.message : strings.errors.unexpected(0)
 }
 
+/** A duration token in seconds: "1.4s" -> 1.4, "250ms" -> 0.25. */
+function cssSeconds(name: string): number {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value.endsWith('ms') ? parseFloat(value) / 1000 : parseFloat(value)
+}
+
+/** Shows an error notice and plays the error sound. */
+function showError(error: unknown, title?: string): void {
+  infobar.show(errorNotice(error, title))
+  playError()
+}
+
 /** Error notice; when the limit is reached without a token, it offers "Add token". */
 function errorNotice(error: unknown, title?: string): Notice {
   const notice: Notice = { kind: 'error', title, detail: errorMessage(error) }
@@ -201,6 +219,10 @@ function errorNotice(error: unknown, title?: string): Notice {
 
 function applySettings(next: MapSettings): void {
   if (next.spacing !== settings.spacing) view.setSpacing(next.spacing / 100)
+  if (next.sounds !== settings.sounds) {
+    setSoundsEnabled(next.sounds)
+    if (next.sounds) playMutual() // a short ping, so turning sounds on can be heard
+  }
   settings = next
   view.setDisplay({
     mutualOnly: settings.mutualOnly,
@@ -281,6 +303,7 @@ async function loadMore(login: string): Promise<void> {
     ])
     if (version !== mapVersion) return
     const before = model.peopleCount
+    const mutualBefore = model.mutualCount
 
     for (const user of followers?.users ?? []) {
       model.addPerson(user)
@@ -305,8 +328,9 @@ async function loadMore(login: string): Promise<void> {
       title: strings.notices.expanded(login),
       detail: strings.notices.newPeople(model.peopleCount - before),
     })
+    playExpansion(model.peopleCount - before, model.mutualCount > mutualBefore)
   } catch (error) {
-    if (version === mapVersion) infobar.show(errorNotice(error, strings.notices.couldNotLoad(login)))
+    if (version === mapVersion) showError(error, strings.notices.couldNotLoad(login))
   } finally {
     if (version === mapVersion) {
       loading.delete(key(login))
@@ -360,7 +384,7 @@ async function startMap(login: string): Promise<void> {
     // The center starts selected, so the profile panel shows who the map is about.
     selectPerson(profile.login, false)
   } catch (error) {
-    if (version === mapVersion) infobar.show(errorNotice(error))
+    if (version === mapVersion) showError(error)
   }
 }
 

@@ -1,8 +1,9 @@
-// "Map settings": floating panel over the map, in three collapsible sections.
+// "Map settings": floating panel over the map, in collapsible sections.
 // - Filters: "Mutual only" and "Show not expanded" (on/off switches);
 // - Display: "Node size" and "Spacing" (sliders, in percent of the normal value);
 // - GitHub requests: "Per click", how many people each list loads per click, and the
-//   token button (on phones the top bar has no room for it, so it lives here too).
+//   token button (on phones the top bar has no room for it, so it lives here too);
+// - Sound: "Sounds" on or off (off at first; the choice is remembered, see sounds.ts).
 // Every change is reported at once with the full settings, so main.ts can apply them.
 
 import { icons } from './icons.ts'
@@ -14,6 +15,7 @@ export interface MapSettings {
   nodeSize: number // percent
   spacing: number // percent
   perClick: number
+  sounds: boolean
 }
 
 export const DEFAULT_SETTINGS: MapSettings = {
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: MapSettings = {
   nodeSize: 100,
   spacing: 100,
   perClick: 20,
+  sounds: false,
 }
 
 const NODE_SIZE = { min: 50, max: 150, step: 10 }
@@ -42,9 +45,10 @@ export interface SettingsPanel {
 
 export const SETTINGS_PANEL_ID = 'map-settings'
 
-export function createSettingsPanel(handlers: SettingsPanelHandlers): SettingsPanel {
+/** `initial` lets settings remembered from a past visit (like "Sounds") start as they were. */
+export function createSettingsPanel(handlers: SettingsPanelHandlers, initial: MapSettings = DEFAULT_SETTINGS): SettingsPanel {
   const text = strings.settings
-  const settings: MapSettings = { ...DEFAULT_SETTINGS }
+  const settings: MapSettings = { ...initial }
 
   const element = document.createElement('section')
   element.className = 'flyout settings-panel'
@@ -87,6 +91,14 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers): SettingsPa
         </button>
       </div>
     `)}
+
+    ${section('sound', text.sound, true, `
+      <label class="setting-row">
+        <span>${text.sounds}</span>
+        <input class="toggle" type="checkbox" role="switch" data-setting="sounds" aria-describedby="sounds-hint">
+      </label>
+      <p class="setting-hint" id="sounds-hint">${text.soundsHint}</p>
+    `)}
   `
 
   // ---------- Initial values ----------
@@ -97,12 +109,14 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers): SettingsPa
   const nodeSize = input('nodeSize')
   const spacing = input('spacing')
   const perClick = element.querySelector<HTMLSelectElement>('[data-setting="perClick"]')!
+  const sounds = input('sounds')
 
   mutualOnly.checked = settings.mutualOnly
   showNotExpanded.checked = settings.showNotExpanded
   nodeSize.value = String(settings.nodeSize)
   spacing.value = String(settings.spacing)
   perClick.value = String(settings.perClick)
+  sounds.checked = settings.sounds
   updateSlider(nodeSize)
   updateSlider(spacing)
 
@@ -131,6 +145,7 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers): SettingsPa
     change({ spacing: Number(spacing.value) })
   })
   perClick.addEventListener('change', () => change({ perClick: Number(perClick.value) }))
+  sounds.addEventListener('change', () => change({ sounds: sounds.checked }))
 
   function change(part: Partial<MapSettings>): void {
     Object.assign(settings, part)
