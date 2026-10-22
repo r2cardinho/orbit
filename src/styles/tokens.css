@@ -128,6 +128,8 @@
   --dur-camera: 400ms;     /* camera moving to show the whole map */
   --dur-spin: 1s;          /* one turn of the loading spinner */
   --dur-notice: 5s;        /* how long a success notice stays before closing itself */
+  --dur-orbit: 1.4s;       /* logo hover: the people make one full turn around the center */
+  --ease-orbit: cubic-bezier(0.65, 0, 0.35, 1); /* starts slow, speeds up, slows down to land */
   --ease: cubic-bezier(0, 0, 0, 1);
 
   /* ---------- Focus ---------- */
@@ -136,5 +138,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --dur-fast: 0ms; --dur-normal: 0ms; --dur-camera: 0ms; }
+  :root { --dur-fast: 0ms; --dur-normal: 0ms; --dur-camera: 0ms; --dur-orbit: 0ms; }
 }

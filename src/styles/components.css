@@ -218,6 +218,62 @@
   color: var(--accent);
 }
 
+/*
+  Logo orbit (on hover over the logo or the name): a faint orbit ring appears, the links
+  fade out, the three people travel one full turn around the center, and the links come
+  back. With reduced motion, --dur-orbit is 0 and nothing moves.
+*/
+.logo-ring {
+  opacity: 0;
+}
+
+.logo-people {
+  transform-box: view-box;
+  transform-origin: 10px 11px; /* center of the triangle, see icons.ts */
+}
+
+.topbar-brand:hover .logo-people {
+  animation: logo-turn var(--dur-orbit) var(--ease-orbit);
+}
+
+.topbar-brand:hover .logo-ring {
+  animation: logo-ring var(--dur-orbit) var(--ease-orbit);
+}
+
+.topbar-brand:hover .logo-links {
+  animation: logo-links var(--dur-orbit) var(--ease-orbit);
+}
+
+@keyframes logo-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logo-ring {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  20%,
+  80% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes logo-links {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  15%,
+  85% {
+    opacity: 0;
+  }
+}
+
 .topbar-actions {
   display: flex;
   justify-content: flex-end;

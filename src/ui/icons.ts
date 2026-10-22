@@ -9,12 +9,22 @@ function icon(content: string, filled = false): string {
   return `<svg class="icon" viewBox="0 0 20 20" width="20" height="20" ${paint} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${content}</svg>`
 }
 
-// Three people connected in a triangle.
-const nodes = '<path d="M10 4.5 4.5 14.5M10 4.5l5.5 10M4.5 14.5h11"/><circle cx="10" cy="4.5" r="2"/><circle cx="4.5" cy="14.5" r="2"/><circle cx="15.5" cy="14.5" r="2"/>'
+// Three people connected in an equilateral triangle, centered on (10, 11) with radius 6.5.
+// Equilateral so the logo's orbit animation (a full turn) ends exactly where it started.
+const links = '<path d="M10 4.5 4.37 14.25h11.26Z"/>'
+const people = '<circle cx="10" cy="4.5" r="2"/><circle cx="4.37" cy="14.25" r="2"/><circle cx="15.63" cy="14.25" r="2"/>'
+
+// The logo has separate parts so CSS can animate them on hover: a faint orbit ring,
+// the links between the people, and the people themselves (which travel around the ring).
+const logo = `<svg class="icon logo" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+  <circle class="logo-ring" cx="10" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1"/>
+  <g class="logo-links" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">${links}</g>
+  <g class="logo-people" fill="currentColor">${people}</g>
+</svg>`
 
 export const icons = {
-  logo: icon(nodes, true),
-  people: icon(nodes),
+  logo,
+  people: icon(links + people),
   path: icon('<circle cx="5" cy="5" r="2"/><circle cx="15" cy="15" r="2"/><path d="M7 5h6a3 3 0 0 1 0 6H7a2 2 0 0 0 0 4h6"/>'),
   recent: icon('<circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/>'),
   search: icon('<circle cx="8.5" cy="8.5" r="5"/><path d="m12.5 12.5 4.5 4.5"/>'),
