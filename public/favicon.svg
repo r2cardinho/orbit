@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Orbit logo: three people linked in a triangle.
+       A favicon cannot read CSS, so the colors are copied from tokens.css:
+       #202020 is the mica background and #9d8cff is the accent purple.
+       (XML comments cannot contain two hyphens in a row, so the token names are not written here.) -->
+  <rect width="32" height="32" rx="7" fill="#202020"/>
+  <path d="M16 9 9 22.5M16 9l7 13.5M9 22.5h14" fill="none" stroke="#9d8cff" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="16" cy="9" r="3.5" fill="#9d8cff"/>
+  <circle cx="9" cy="22.5" r="3.5" fill="#9d8cff"/>
+  <circle cx="23" cy="22.5" r="3.5" fill="#9d8cff"/>
+</svg>
