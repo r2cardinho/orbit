@@ -207,8 +207,16 @@
   padding: 0 var(--sp-4);
 }
 
-.topbar-brand {
+/* A row that only takes the width of its content, so the logo's hover area (animation
+   and sound) is just the logo and the name, not the whole left part of the bar. */
+.topbar-start {
   display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.topbar-brand {
+  display: inline-flex;
   align-items: center;
   gap: var(--sp-3);
   font-weight: var(--fw-strong);
