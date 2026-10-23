@@ -89,7 +89,6 @@ export const strings = {
     requests: 'GitHub requests',
     perClick: 'Per click',
     perClickHint: 'People loaded from each list (followers and following) on every click.',
-    token: 'GitHub token',
     sound: 'Sound',
     sounds: 'Sounds',
     soundsHint: 'Soft sounds when people appear, when a connection turns mutual and when something goes wrong.',

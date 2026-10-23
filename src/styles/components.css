@@ -71,6 +71,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
+  white-space: nowrap; /* a button label never breaks into two lines */
   height: var(--control-h);
   padding: 0 var(--sp-3);
   background-color: var(--control-fill);
@@ -1072,6 +1073,12 @@
   flex-direction: column;
   gap: var(--sp-1);
   padding: var(--sp-1) 0 var(--sp-2);
+}
+
+/* A button on its own line inside "Map settings" (e.g. "Add token"). */
+.setting-button {
+  width: 100%;
+  margin-bottom: var(--sp-2);
 }
 
 .setting-hint {

@@ -92,12 +92,9 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers, initial: Ma
         </select>
       </label>
       <p class="setting-hint" id="per-click-hint">${text.perClickHint}</p>
-      <div class="setting-row">
-        <span>${text.token}</span>
-        <button class="button token-button" type="button" aria-haspopup="dialog">
-          ${icons.key}<span class="token-button-label">${strings.topbar.addToken}</span>
-        </button>
-      </div>
+      <button class="button token-button setting-button" type="button" aria-haspopup="dialog">
+        ${icons.key}<span class="token-button-label">${strings.topbar.addToken}</span>
+      </button>
     `)}
 
     ${section('sound', text.sound, true, `
