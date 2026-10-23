@@ -219,6 +219,7 @@ function errorNotice(error: unknown, title?: string): Notice {
 
 function applySettings(next: MapSettings): void {
   if (next.spacing !== settings.spacing) view.setSpacing(next.spacing / 100)
+  if (next.livePhysics !== settings.livePhysics) view.setLivePhysics(next.livePhysics)
   if (next.sounds !== settings.sounds) {
     setSoundsEnabled(next.sounds)
     if (next.sounds) playMutual() // a short ping, so turning sounds on can be heard

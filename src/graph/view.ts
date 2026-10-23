@@ -16,7 +16,11 @@ import cytoscape from 'cytoscape'
 import type { GraphModel, Link } from './model.ts'
 import { GraphPhysics } from './physics.ts'
 
-const SPAWN_RADIUS = 30 // new people start in a circle this size around who was expanded
+const SPAWN_RADIUS = 30 // live map: new people start in a circle this size around who was expanded
+// Still map: new people start in a fan on the outer side of who was expanded, in rings
+// at these distances, so they find room without anyone else having to move.
+const FAN_RINGS = [80, 120, 160]
+const FAN_WIDTH = Math.PI * 0.9 // a little less than half a turn
 const FIT_ENERGY = 0.1 // the camera fits the map once the physics calms down to this
 const ARROW_SCALE = 0.6 // arrow size relative to the line width
 const MIN_ZOOM = 0.2
@@ -304,6 +308,11 @@ export class GraphView {
     this.physics.setSpacing(multiplier)
   }
 
+  /** "Live physics" in "Map settings": off gives a still map. */
+  setLivePhysics(on: boolean): void {
+    this.physics.setLive(on)
+  }
+
   zoomIn(): void {
     this.zoomAroundMiddle(this.cy.zoom() * ZOOM_STEP)
   }
@@ -406,19 +415,32 @@ export class GraphView {
   private syncPeople(origin: string | undefined): void {
     const newPeople = this.model.getPeople().filter((person) => this.cy.getElementById(nodeId(person.login)).empty())
     const start = this.originPosition(origin)
+    const middle = this.centerPosition()
+    // A fan only makes sense away from the middle; around the center itself, use a full circle.
+    const fan = !this.physics.isMoving && Math.hypot(start.x - middle.x, start.y - middle.y) > 1
 
-    // New people start in a small circle around the origin, then the physics spreads them out.
     newPeople.forEach((person, index) => {
-      const angle = (2 * Math.PI * index) / newPeople.length
-      this.cy.add({
-        group: 'nodes',
-        data: { id: nodeId(person.login), login: person.login },
-        position: {
-          x: start.x + Math.cos(angle) * SPAWN_RADIUS,
-          y: start.y + Math.sin(angle) * SPAWN_RADIUS,
-        },
-      })
+      let position: cytoscape.Position
+      if (fan) {
+        // Still map: a fan pointing away from the middle of the map.
+        const away = Math.atan2(start.y - middle.y, start.x - middle.x)
+        const share = newPeople.length === 1 ? 0.5 : index / (newPeople.length - 1)
+        const angle = away + (share - 0.5) * FAN_WIDTH
+        const ring = FAN_RINGS[index % FAN_RINGS.length]
+        position = { x: start.x + Math.cos(angle) * ring, y: start.y + Math.sin(angle) * ring }
+      } else {
+        // Live map: a small circle around the origin; the physics spreads them out with animation.
+        const angle = (2 * Math.PI * index) / newPeople.length
+        position = { x: start.x + Math.cos(angle) * SPAWN_RADIUS, y: start.y + Math.sin(angle) * SPAWN_RADIUS }
+      }
+      this.cy.add({ group: 'nodes', data: { id: nodeId(person.login), login: person.login }, position })
     })
+  }
+
+  /** Where the center of the map is drawn, or (0, 0) before there is one. */
+  private centerPosition(): cytoscape.Position {
+    const center = this.model.getCenter()
+    return center === null ? { x: 0, y: 0 } : this.originPosition(center)
   }
 
   private originPosition(origin: string | undefined): cytoscape.Position {

@@ -1,6 +1,7 @@
 // "Map settings": floating panel over the map, in collapsible sections.
 // - Filters: "Mutual only" and "Show not expanded" (on/off switches);
-// - Display: "Node size" and "Spacing" (sliders, in percent of the normal value);
+// - Display: "Live physics" (on: the map moves and floats; off: a still map), and
+//   "Node size" and "Spacing" (sliders, in percent of the normal value);
 // - GitHub requests: "Per click", how many people each list loads per click, and the
 //   token button (on phones the top bar has no room for it, so it lives here too);
 // - Sound: "Sounds" on or off (off at first; the choice is remembered, see sounds.ts).
@@ -14,6 +15,7 @@ export interface MapSettings {
   showNotExpanded: boolean
   nodeSize: number // percent
   spacing: number // percent
+  livePhysics: boolean
   perClick: number
   sounds: boolean
 }
@@ -23,6 +25,7 @@ export const DEFAULT_SETTINGS: MapSettings = {
   showNotExpanded: true,
   nodeSize: 100,
   spacing: 100,
+  livePhysics: true,
   perClick: 20,
   sounds: false,
 }
@@ -72,6 +75,11 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers, initial: Ma
     `)}
 
     ${section('display', text.display, true, `
+      <label class="setting-row">
+        <span>${text.livePhysics}</span>
+        <input class="toggle" type="checkbox" role="switch" data-setting="livePhysics" aria-describedby="live-physics-hint">
+      </label>
+      <p class="setting-hint" id="live-physics-hint">${text.livePhysicsHint}</p>
       ${slider('nodeSize', text.nodeSize, NODE_SIZE)}
       ${slider('spacing', text.spacing, SPACING)}
     `)}
@@ -110,6 +118,7 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers, initial: Ma
   const spacing = input('spacing')
   const perClick = element.querySelector<HTMLSelectElement>('[data-setting="perClick"]')!
   const sounds = input('sounds')
+  const livePhysics = input('livePhysics')
 
   mutualOnly.checked = settings.mutualOnly
   showNotExpanded.checked = settings.showNotExpanded
@@ -117,6 +126,7 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers, initial: Ma
   spacing.value = String(settings.spacing)
   perClick.value = String(settings.perClick)
   sounds.checked = settings.sounds
+  livePhysics.checked = settings.livePhysics
   updateSlider(nodeSize)
   updateSlider(spacing)
 
@@ -146,6 +156,7 @@ export function createSettingsPanel(handlers: SettingsPanelHandlers, initial: Ma
   })
   perClick.addEventListener('change', () => change({ perClick: Number(perClick.value) }))
   sounds.addEventListener('change', () => change({ sounds: sounds.checked }))
+  livePhysics.addEventListener('change', () => change({ livePhysics: livePhysics.checked }))
 
   function change(part: Partial<MapSettings>): void {
     Object.assign(settings, part)

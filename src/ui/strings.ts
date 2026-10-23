@@ -82,6 +82,8 @@ export const strings = {
     mutualOnly: 'Mutual only',
     showNotExpanded: 'Show not expanded',
     display: 'Display',
+    livePhysics: 'Live physics',
+    livePhysicsHint: 'People float and pull their connections along when dragged. Turn off for a still map.',
     nodeSize: 'Node size',
     spacing: 'Spacing',
     requests: 'GitHub requests',
